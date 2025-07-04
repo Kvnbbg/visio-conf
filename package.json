@@ -1,0 +1,16 @@
+{
+  "name": "visio-conf",
+  "version": "1.0.0",
+  "description": "Application de vidéoconférence rapide avec ZEGOCLOUD",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "crypto": "^1.0.1"
+  },
+  "engines": {
+    "node": ">=14"
+  }
+}
