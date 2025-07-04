@@ -1,145 +1,290 @@
-# Visio-Conf - Application de Vidéoconférence Connectée à une API
+# Visio-Conf MVP - Application de Vidéoconférence avec Authentification France Travail
 
-## Aperçu
+Une application de vidéoconférence moderne intégrant l'authentification OAuth 2.0 de France Travail et la technologie ZEGOCLOUD pour les appels vidéo.
 
-**Visio-Conf** est une application de vidéoconférence simple et rapide à déployer, conçue pour intégrer des communications vidéo et audio en temps réel en s'appuyant sur le SDK de [ZEGOCLOUD](https://www.zegocloud.com/). Cette application utilise l'UI Kit préconstruit de ZEGOCLOUD pour minimiser le temps de développement, offrant des fonctionnalités essentielles comme rejoindre une réunion, activer/désactiver la caméra et le micro, et partager l'écran. Le projet utilise **React** pour le frontend, **Node.js/Express** pour un backend minimal (génération de tokens), et **Vercel** pour un déploiement rapide.
+## 🚀 Fonctionnalités
 
-Cette application suit les meilleures pratiques modernes pour le développement d'applications, avec une architecture simple, une séparation des préoccupations, et une approche axée sur la rapidité de mise en œuvre.
+- **Authentification sécurisée** : OAuth 2.0 avec PKCE via France Travail
+- **Vidéoconférence** : Intégration ZEGOCLOUD pour des appels vidéo de haute qualité
+- **Interface moderne** : Interface utilisateur responsive avec React et Tailwind CSS
+- **Sécurité renforcée** : Gestion des sessions, validation des tokens, rate limiting
+- **Architecture modulaire** : Code organisé en modules réutilisables
+- **Tests complets** : Suite de tests unitaires et d'intégration
 
-## Fonctionnalités principales
+## 📋 Prérequis
 
-- **Rejoindre une réunion** : Entrez un ID de réunion et un nom d'utilisateur pour rejoindre une vidéoconférence.
-- **Contrôles de base** : Activer/désactiver la caméra et le micro, partager l'écran via l'UI Kit de ZEGOCLOUD.
-- **Interface réactive** : Design minimaliste avec Tailwind CSS, adapté aux mobiles et desktops.
-- **Déploiement rapide** : Intégration avec Vercel pour un déploiement automatisé avec CI/CD.
-- **Backend minimal** : Génération sécurisée de tokens pour l'authentification ZEGOCLOUD.
+- Node.js 14+ 
+- Compte ZEGOCLOUD (pour les tokens de vidéoconférence)
+- Compte développeur France Travail (pour l'authentification OAuth)
 
-## Prérequis
+## 🛠️ Installation
 
-- **Node.js** (version >= 14)
-- Compte [ZEGOCLOUD](https://www.zegocloud.com/) pour obtenir `APP_ID` et `SERVER_SECRET`
-- Compte [Vercel](https://vercel.com/) pour le déploiement
-- Compte GitHub pour gérer le dépôt
-- Connaissance de base en React et JavaScript/TypeScript
-
-## Installation et configuration
-
-1. **Cloner le dépôt** :
+1. **Cloner le repository**
    ```bash
-   git clone https://github.com/kvnbbg/visio-conf.git
-   cd visio-conf
+   git clone <repository-url>
+   cd visio-conf-mvp
    ```
 
-2. **Installer les dépendances du backend** :
+2. **Installer les dépendances**
    ```bash
    npm install
    ```
 
-3. **Configurer ZEGOCLOUD** :
-   - Inscrivez-vous sur [ZEGOCLOUD](https://www.zegocloud.com/) et créez un projet.
-   - Récupérez votre `APP_ID` et `SERVER_SECRET` depuis le tableau de bord ZEGOCLOUD.
-   - Ajoutez ces informations dans le fichier `server.js` :
-     ```javascript
-     const APP_ID = 'VOTRE_APP_ID'; // Remplacez par votre APP_ID
-     const SERVER_SECRET = 'VOTRE_SERVER_SECRET'; // Remplacez par votre SERVER_SECRET
-     ```
-
-4. **Lancer le backend localement** (pour tester) :
+3. **Configuration de l'environnement**
    ```bash
-   npm start
+   cp env.example .env
+   ```
+   
+   Modifier le fichier `.env` avec vos vraies valeurs :
+   ```env
+   # Configuration ZEGOCLOUD
+   ZEGOCLOUD_APP_ID=your_zegocloud_app_id
+   ZEGOCLOUD_SERVER_SECRET=your_zegocloud_server_secret
+   
+   # Configuration France Travail OAuth
+   FRANCETRAVAIL_CLIENT_ID=your_francetravail_client_id
+   FRANCETRAVAIL_CLIENT_SECRET=your_francetravail_client_secret
+   FRANCETRAVAIL_REDIRECT_URI=http://localhost:3000/auth/francetravail/callback
+   
+   # Configuration de session
+   SESSION_SECRET=your_secure_session_secret
+   
+   # Configuration de l'application
+   PORT=3000
+   NODE_ENV=development
    ```
 
-5. **Tester l'application localement** :
-   - Ouvrez `index.html` dans un navigateur (nécessite un serveur local pour les appels API, par exemple, utilisez `npx serve`).
-   - Alternativement, déployez sur Vercel pour tester l'application complète.
+## 🚀 Démarrage
 
-## Déploiement sur Vercel
-
-1. **Créer un dépôt GitHub** :
-   - Poussez le projet vers un dépôt GitHub (`kvnbbg/visio-conf`).
-
-2. **Configurer Vercel** :
-   - Connectez-vous à [Vercel](https://vercel.com/) et importez le dépôt.
-   - Pour le frontend, spécifiez `index.html` comme fichier principal.
-   - Pour le backend, assurez-vous que le fichier `vercel.json` est présent pour router les requêtes API vers `server.js`.
-
-3. **Déployer** :
-   - Cliquez sur "Deploy" dans Vercel. Le CI/CD automatisé construira et déploiera l'application.
-   - Une fois déployé, accédez à l'URL fournie par Vercel, entrez un ID de réunion (par exemple, "room123") et un nom d'utilisateur, puis cliquez sur "Rejoindre".
-
-## Structure du projet
-
-```
-visio-conf/
-├── index.html         # Application React avec l'UI Kit ZEGOCLOUD
-├── server.js          # Backend Node.js/Express pour la génération de tokens
-├── package.json       # Dépendances et scripts du backend
-├── vercel.json        # Configuration Vercel pour le déploiement
-└── README.md          # Ce fichier
+### Mode développement
+```bash
+npm run dev
 ```
 
-## Contribuer au projet
+### Mode production
+```bash
+npm start
+```
 
-Pour contribuer rapidement à **Visio-Conf**, suivez ces étapes :
+L'application sera accessible sur `http://localhost:3000`
 
-### Prérequis pour contribuer
-- Familiarité avec **React**, **JavaScript/TypeScript**, et **Node.js**.
-- Compréhension des API REST et des SDK de vidéoconférence.
-- Accès au dépôt GitHub pour soumettre des pull requests.
+## 🧪 Tests
 
-### Étapes pour contribuer
-1. **Forker le dépôt** :
-   - Créez une fork du dépôt `kvnbbg/visio-conf` sur GitHub.
-   - Clonez votre fork localement :
-     ```bash
-     git clone https://github.com/kvnbbg/visio-conf.git
-     ```
+### Exécuter tous les tests
+```bash
+npm test
+```
 
-2. **Créer une branche** :
-   - Créez une branche pour votre fonctionnalité ou correction :
-     ```bash
-     git checkout -b feature/nouvelle-fonctionnalite
-     ```
+### Tests en mode watch
+```bash
+npm run test:watch
+```
 
-3. **Développer** :
-   - **Frontend** : Modifiez `index.html` pour ajouter des composants React ou améliorer l'UI avec Tailwind CSS.
-   - **Backend** : Ajoutez des endpoints dans `server.js` si nécessaire (par exemple, gestion de salles supplémentaires).
-   - **Nouvelles fonctionnalités** : Intégrez des fonctionnalités comme le chat, les notifications push, ou l'observabilité avec Firebase Analytics.
-   - Utilisez l'UI Kit de ZEGOCLOUD pour ajouter des fonctionnalités comme l'enregistrement de réunions ou la gestion avancée des participants.
+### Couverture de code
+```bash
+npm run test:coverage
+```
 
-4. **Tester** :
-   - Testez localement avec `npm start` pour le backend et un serveur local pour le frontend.
-   - Assurez-vous que les nouvelles fonctionnalités respectent les principes d'accessibilité (WCAG) et de sécurité (validation des entrées, chiffrement).
+## 📁 Structure du projet
 
-5. **Soumettre une Pull Request** :
-   - Poussez vos modifications vers votre fork :
-     ```bash
-     git push origin feature/nouvelle-fonctionnalite
-     ```
-   - Créez une pull request vers le dépôt principal avec une description claire des changements.
+```
+visio-conf-mvp/
+├── lib/                    # Modules réutilisables
+│   ├── auth.js            # Gestion OAuth 2.0 / PKCE
+│   ├── zegoToken.js       # Génération tokens ZEGOCLOUD
+│   └── middleware.js      # Middlewares Express
+├── tests/                 # Tests unitaires et d'intégration
+│   ├── auth.test.js
+│   ├── zegoToken.test.js
+│   ├── server.test.js
+│   └── integration.test.js
+├── server.js              # Serveur Express principal
+├── index.html             # Interface utilisateur React
+├── package.json           # Configuration npm
+├── .env                   # Variables d'environnement
+└── README.md             # Documentation
+```
 
-### Bonnes pratiques pour contribuer
-- **Focus sur la simplicité** : Priorisez les fonctionnalités essentielles (MoSCoW : Must have > Should have > Could have).
-- **Séparation des préoccupations** : Gardez la logique UI dans `index.html`, la logique métier dans des composants React séparés, et la logique serveur dans `server.js`.
-- **Tests** : Ajoutez des tests unitaires (par exemple, avec Jest pour React) pour les nouveaux composants.
-- **Accessibilité** : Assurez-vous que les nouvelles fonctionnalités respectent les ratios de contraste WCAG (4.5:1 pour le texte normal) et sont compatibles avec les lecteurs d'écran.
-- **Documentation** : Mettez à jour ce README ou ajoutez des commentaires dans le code pour documenter les nouvelles fonctionnalités.
+## 🔧 API Endpoints
 
-## Fonctionnalités futures suggérées
+### Authentification
+- `GET /auth/francetravail/login` - Initie l'authentification France Travail
+- `GET /auth/francetravail/callback` - Callback OAuth 2.0
+- `GET /api/auth/status` - Vérifie le statut d'authentification
+- `POST /api/auth/logout` - Déconnexion
 
-- **Chat intégré** : Ajouter un module de chat textuel avec l'UI Kit ZEGOCLOUD.
-- **Observabilité** : Intégrer Firebase Analytics ou OpenTelemetry pour suivre les métriques utilisateur et techniques.
-- **Authentification avancée** : Implémenter l'authentification biométrique ou sans mot de passe.
-- **Support hors ligne** : Ajouter une gestion basique des états hors ligne avec un cache local.
-- **Personnalisation UI** : Ajouter des thèmes sombre/clair ou des options de personnalisation pour les utilisateurs.
+### Vidéoconférence
+- `POST /api/generate-token` - Génère un token ZEGOCLOUD pour rejoindre une réunion
+- `GET /api/user/profile` - Récupère le profil utilisateur
 
-## Ressources utiles
+### Utilitaires
+- `GET /health` - Health check de l'application
 
-- [Documentation ZEGOCLOUD](https://www.zegocloud.com/docs) : Guide pour l'UI Kit et le SDK.
-- [Documentation Vercel](https://vercel.com/docs) : Instructions pour le déploiement.
-- [Tailwind CSS](https://tailwindcss.com/docs) : Référence pour le style de l'interface.
-- [React](https://reactjs.org/docs) : Documentation pour le développement frontend.
+## 🔐 Sécurité
 
-## Licence
+### Authentification OAuth 2.0 avec PKCE
+- Utilisation du flow OAuth 2.0 avec PKCE (Proof Key for Code Exchange)
+- Validation des paramètres `state` pour prévenir les attaques CSRF
+- Gestion sécurisée des tokens d'accès et de rafraîchissement
 
-Ce projet est sous licence Mozilla. Consultez le fichier `LICENSE` pour plus de détails.
+### Sécurité des sessions
+- Sessions chiffrées avec secret configurable
+- Expiration automatique des sessions
+- Protection contre les attaques de fixation de session
+
+### Protection des API
+- Rate limiting (100 requêtes par 15 minutes par défaut)
+- Validation des paramètres d'entrée
+- Gestion centralisée des erreurs
+- Logs de sécurité
+
+## 🏗️ Architecture
+
+### Modules principaux
+
+#### `lib/auth.js`
+Gestion de l'authentification OAuth 2.0 :
+- Génération des paramètres PKCE
+- Construction des URLs d'autorisation
+- Échange de code contre token
+- Décodage des tokens JWT
+
+#### `lib/zegoToken.js`
+Génération des tokens ZEGOCLOUD :
+- Validation des paramètres
+- Génération de tokens sécurisés
+- Vérification d'expiration
+
+#### `lib/middleware.js`
+Middlewares Express :
+- Authentification requise
+- Validation des requêtes
+- Gestion d'erreurs
+- Rate limiting
+- Logging
+
+### Flow d'authentification
+
+1. **Initiation** : L'utilisateur clique sur "Se connecter avec France Travail"
+2. **Redirection** : Redirection vers France Travail avec paramètres PKCE
+3. **Autorisation** : L'utilisateur autorise l'application
+4. **Callback** : France Travail redirige vers l'application avec un code
+5. **Échange** : L'application échange le code contre un token d'accès
+6. **Session** : Création d'une session utilisateur sécurisée
+
+### Flow de vidéoconférence
+
+1. **Authentification** : Vérification que l'utilisateur est connecté
+2. **Saisie** : L'utilisateur saisit l'ID de la réunion
+3. **Token** : Génération d'un token ZEGOCLOUD sécurisé
+4. **Connexion** : Initialisation de l'interface ZEGOCLOUD
+5. **Réunion** : Participation à la vidéoconférence
+
+## 🔧 Configuration avancée
+
+### Variables d'environnement
+
+| Variable | Description | Valeur par défaut |
+|----------|-------------|-------------------|
+| `ZEGOCLOUD_APP_ID` | ID de l'application ZEGOCLOUD | `demo_app_id` |
+| `ZEGOCLOUD_SERVER_SECRET` | Secret serveur ZEGOCLOUD | `demo_server_secret` |
+| `FRANCETRAVAIL_CLIENT_ID` | ID client France Travail | `demo_client_id` |
+| `FRANCETRAVAIL_CLIENT_SECRET` | Secret client France Travail | `demo_client_secret` |
+| `FRANCETRAVAIL_REDIRECT_URI` | URI de redirection OAuth | `http://localhost:3000/auth/francetravail/callback` |
+| `SESSION_SECRET` | Secret pour les sessions | `demo_session_secret` |
+| `PORT` | Port du serveur | `3000` |
+| `NODE_ENV` | Environnement d'exécution | `development` |
+
+### Personnalisation du rate limiting
+
+```javascript
+// Dans server.js
+app.use(rateLimit(200, 10 * 60 * 1000)); // 200 requêtes par 10 minutes
+```
+
+### Configuration des sessions
+
+```javascript
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production', // HTTPS en production
+        maxAge: 24 * 60 * 60 * 1000 // 24 heures
+    }
+}));
+```
+
+## 🚀 Déploiement
+
+### Déploiement sur Vercel
+
+1. Installer Vercel CLI : `npm i -g vercel`
+2. Configurer les variables d'environnement dans Vercel
+3. Déployer : `vercel --prod`
+
+### Déploiement sur Heroku
+
+1. Créer une application Heroku
+2. Configurer les variables d'environnement
+3. Déployer via Git
+
+### Variables d'environnement de production
+
+⚠️ **Important** : En production, utilisez des valeurs sécurisées :
+- `SESSION_SECRET` : Générez une clé aléatoire forte
+- `ZEGOCLOUD_*` : Utilisez vos vraies clés ZEGOCLOUD
+- `FRANCETRAVAIL_*` : Utilisez vos vraies clés France Travail
+- `NODE_ENV=production`
+
+## 🐛 Dépannage
+
+### Erreurs courantes
+
+#### "Authentification requise"
+- Vérifiez que l'utilisateur est bien connecté
+- Vérifiez la configuration des sessions
+
+#### "Erreur lors de la génération du token"
+- Vérifiez les paramètres ZEGOCLOUD
+- Vérifiez que roomID et userID sont fournis
+
+#### "State invalide"
+- Problème de session ou attaque CSRF potentielle
+- Vérifiez la configuration des sessions
+
+### Logs de débogage
+
+En mode développement, les logs détaillés sont activés :
+```bash
+NODE_ENV=development npm start
+```
+
+## 🤝 Contribution
+
+1. Fork le projet
+2. Créer une branche feature (`git checkout -b feature/AmazingFeature`)
+3. Commit les changements (`git commit -m 'Add some AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrir une Pull Request
+
+## 📝 Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+
+## 📞 Support
+
+Pour toute question ou problème :
+- Ouvrir une issue sur GitHub
+- Consulter la documentation France Travail
+- Consulter la documentation ZEGOCLOUD
+
+## 🔄 Changelog
+
+### Version 1.0.0
+- Authentification OAuth 2.0 avec France Travail
+- Intégration ZEGOCLOUD pour la vidéoconférence
+- Interface utilisateur React responsive
+- Architecture modulaire et tests complets
+- Sécurité renforcée avec rate limiting et validation
