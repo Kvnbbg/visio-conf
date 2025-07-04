@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application de Vidéoconférence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.15/babel.min.js"></script>
+  <script src="https://unpkg.com/zego-uikit-prebuilt/zego-uikit-prebuilt.js"></script>
+</head>
+<body>
+  <div id="root" class="min-h-screen bg-gray-100"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [roomID, setRoomID] = useState('');
+      const [userName, setUserName] = useState('');
+      const [isJoined, setIsJoined] = useState(false);
+
+      const joinRoom = async () => {
+        if (!roomID || !userName) {
+          alert('Veuillez entrer un ID de réunion et un nom d\'utilisateur');
+          return;
+        }
+
+        // Récupérer le token depuis le backend
+        const response = await fetch('/api/generate-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomID, userID: userName }),
+        });
+        const { token } = await response.json();
+
+        // Initialiser ZEGOCLOUD UI Kit
+        const zp = ZegoUIKitPrebuilt.create(token);
+        zp.joinRoom({
+          container: document.querySelector('#root'),
+          scenario: {
+            mode: ZegoUIKitPrebuilt.VideoConference,
+          },
+          roomID,
+          userName,
+          maxUsers: 10,
+          showPreJoinView: false,
+        });
+
+        setIsJoined(true);
+      };
+
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          {!isJoined ? (
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+              <h1 className="text-2xl font-bold mb-4 text-center">Rejoindre une Vidéoconférence</h1>
+              <input
+                type="text"
+                placeholder="ID de la réunion"
+                value={roomID}
+                onChange={(e) => setRoomID(e.target.value)}
+                className="w-full p-2 mb-4 border rounded"
+              />
+              <input
+                type="text"
+                placeholder="Votre nom"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                className="w-full p-2 mb-4 border rounded"
+              />
+              <button
+                onClick={joinRoom}
+                className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+              >
+                Rejoindre
+              </button>
+            </div>
+          ) : (
+            <div className="w-full h-full" />
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
