@@ -1,90 +1,673 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Application de Vidéoconférence</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.15/babel.min.js"></script>
-  <script src="https://unpkg.com/zego-uikit-prebuilt/zego-uikit-prebuilt.js"></script>
-</head>
-<body>
-  <div id="root" class="min-h-screen bg-gray-100"></div>
-
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-
-    function App() {
-      const [roomID, setRoomID] = useState('');
-      const [userName, setUserName] = useState('');
-      const [isJoined, setIsJoined] = useState(false);
-
-      const joinRoom = async () => {
-        if (!roomID || !userName) {
-          alert('Veuillez entrer un ID de réunion et un nom d\'utilisateur');
-          return;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visio-Conf - Vidéoconférence sécurisée avec France Travail</title>
+    <meta name="description" content="Application de vidéoconférence sécurisée intégrée avec l'authentification France Travail">
+    <meta name="keywords" content="vidéoconférence, France Travail, ZEGOCLOUD, OAuth, sécurisé">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- i18next for internationalization -->
+    <script src="https://unpkg.com/i18next@23.7.6/dist/umd/i18next.min.js"></script>
+    <script src="https://unpkg.com/react-i18next@13.5.0/react-i18next.min.js"></script>
+    <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
+    
+    <!-- ZEGOCLOUD SDK -->
+    <script src="https://unpkg.com/zego-express-engine-webrtc@3.0.2/index.js"></script>
+    
+    <!-- Custom styles -->
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-
-        // Récupérer le token depuis le backend
-        const response = await fetch('/api/generate-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomID, userID: userName }),
-        });
-        const { token } = await response.json();
-
-        // Initialiser ZEGOCLOUD UI Kit
-        const zp = ZegoUIKitPrebuilt.create(token);
-        zp.joinRoom({
-          container: document.querySelector('#root'),
-          scenario: {
-            mode: ZegoUIKitPrebuilt.VideoConference,
-          },
-          roomID,
-          userName,
-          maxUsers: 10,
-          showPreJoinView: false,
-        });
-
-        setIsJoined(true);
-      };
-
-      return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
-          {!isJoined ? (
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-              <h1 className="text-2xl font-bold mb-4 text-center">Rejoindre une Vidéoconférence</h1>
-              <input
-                type="text"
-                placeholder="ID de la réunion"
-                value={roomID}
-                onChange={(e) => setRoomID(e.target.value)}
-                className="w-full p-2 mb-4 border rounded"
-              />
-              <input
-                type="text"
-                placeholder="Votre nom"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                className="w-full p-2 mb-4 border rounded"
-              />
-              <button
-                onClick={joinRoom}
-                className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-              >
-                Rejoindre
-              </button>
-            </div>
-          ) : (
-            <div className="w-full h-full" />
-          )}
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Accessibility improvements */
+        .focus-visible:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        
+        /* Language switcher styles */
+        .language-button {
+            transition: all 0.2s ease;
+        }
+        
+        .language-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Video conference styles */
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .control-button {
+            transition: all 0.2s ease;
+        }
+        
+        .control-button:hover {
+            transform: scale(1.1);
+        }
+        
+        .control-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg">
+    <!-- Loading screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-gray-600">Chargement de l'application...</p>
         </div>
-      );
-    }
-
-    ReactDOM.render(<App />, document.getElementById('root'));
-  </script>
+    </div>
+    
+    <!-- Main app container -->
+    <div id="root" class="min-h-screen"></div>
+    
+    <!-- Error boundary fallback -->
+    <div id="error-fallback" class="hidden fixed inset-0 bg-red-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
+            <div class="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 class="text-xl font-bold text-red-800 mb-4">Erreur de l'application</h2>
+            <p class="text-red-600 mb-4">Une erreur inattendue s'est produite. Veuillez recharger la page.</p>
+            <button onclick="window.location.reload()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                Recharger la page
+            </button>
+        </div>
+    </div>
+    
+    <!-- Translation resources -->
+    <script>
+        // Translation resources
+        const translations = {
+            fr: {
+                translation: {
+                    "welcome": "Bienvenue sur Visio-Conf",
+                    "description": "Connectez-vous avec votre compte France Travail pour accéder aux vidéoconférences sécurisées",
+                    "login_button": "Se connecter avec France Travail",
+                    "logout_button": "Se déconnecter",
+                    "join_meeting": "Rejoindre la réunion",
+                    "meeting_id": "ID de la réunion",
+                    "meeting_id_placeholder": "Saisissez l'ID de la réunion (ex: room123)",
+                    "user_id": "ID utilisateur",
+                    "user_id_placeholder": "Saisissez votre ID utilisateur",
+                    "terms": "Conditions d'utilisation",
+                    "privacy": "Politique de confidentialité",
+                    "loading": "Chargement...",
+                    "error_status": "Erreur lors de la vérification du statut d'authentification",
+                    "error_logout": "Erreur lors de la déconnexion",
+                    "error_join_meeting": "Erreur lors de la connexion à la réunion",
+                    "success_logout": "Déconnexion réussie",
+                    "welcome_user": "Bienvenue, {{name}} !",
+                    "meeting_instructions": "Saisissez un ID de réunion pour rejoindre une vidéoconférence",
+                    "language": "Langue",
+                    "health_check": "État du système",
+                    "health_ok": "Le système fonctionne normalement",
+                    "health_error": "Erreur système détectée",
+                    "session_expired": "Votre session a expiré. Veuillez vous reconnecter.",
+                    "invalid_meeting_id": "Veuillez saisir un ID de réunion valide",
+                    "invalid_user_id": "Veuillez saisir un ID utilisateur valide",
+                    "about": "À propos de Visio-Conf",
+                    "version": "Version 2.0.0",
+                    "powered_by": "Propulsé par ZEGOCLOUD et France Travail"
+                }
+            },
+            en: {
+                translation: {
+                    "welcome": "Welcome to Visio-Conf",
+                    "description": "Sign in with your France Travail account to access secure video conferences",
+                    "login_button": "Sign in with France Travail",
+                    "logout_button": "Sign out",
+                    "join_meeting": "Join Meeting",
+                    "meeting_id": "Meeting ID",
+                    "meeting_id_placeholder": "Enter meeting ID (e.g., room123)",
+                    "user_id": "User ID",
+                    "user_id_placeholder": "Enter your user ID",
+                    "terms": "Terms of Use",
+                    "privacy": "Privacy Policy",
+                    "loading": "Loading...",
+                    "error_status": "Error checking authentication status",
+                    "error_logout": "Error during logout",
+                    "error_join_meeting": "Error joining meeting",
+                    "success_logout": "Successfully logged out",
+                    "welcome_user": "Welcome, {{name}}!",
+                    "meeting_instructions": "Enter a meeting ID to join a video conference",
+                    "language": "Language",
+                    "health_check": "System Status",
+                    "health_ok": "System is operational",
+                    "health_error": "System error detected",
+                    "session_expired": "Your session has expired. Please log in again.",
+                    "invalid_meeting_id": "Please enter a valid meeting ID",
+                    "invalid_user_id": "Please enter a valid user ID",
+                    "about": "About Visio-Conf",
+                    "version": "Version 2.0.0",
+                    "powered_by": "Powered by ZEGOCLOUD and France Travail"
+                }
+            },
+            es: {
+                translation: {
+                    "welcome": "Bienvenido a Visio-Conf",
+                    "description": "Inicia sesión con tu cuenta de France Travail para acceder a videoconferencias seguras",
+                    "login_button": "Iniciar sesión con France Travail",
+                    "logout_button": "Cerrar sesión",
+                    "join_meeting": "Unirse a la reunión",
+                    "meeting_id": "ID de la reunión",
+                    "meeting_id_placeholder": "Ingresa el ID de la reunión (ej: room123)",
+                    "user_id": "ID de usuario",
+                    "user_id_placeholder": "Ingresa tu ID de usuario",
+                    "terms": "Términos de uso",
+                    "privacy": "Política de privacidad",
+                    "loading": "Cargando...",
+                    "error_status": "Error al verificar el estado de autenticación",
+                    "error_logout": "Error durante el cierre de sesión",
+                    "error_join_meeting": "Error al unirse a la reunión",
+                    "success_logout": "Sesión cerrada exitosamente",
+                    "welcome_user": "¡Bienvenido, {{name}}!",
+                    "meeting_instructions": "Ingresa un ID de reunión para unirte a una videoconferencia",
+                    "language": "Idioma",
+                    "health_check": "Estado del sistema",
+                    "health_ok": "El sistema está operativo",
+                    "health_error": "Error del sistema detectado",
+                    "session_expired": "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
+                    "invalid_meeting_id": "Por favor, ingresa un ID de reunión válido",
+                    "invalid_user_id": "Por favor, ingresa un ID de usuario válido",
+                    "about": "Acerca de Visio-Conf",
+                    "version": "Versión 2.0.0",
+                    "powered_by": "Impulsado por ZEGOCLOUD y France Travail"
+                }
+            },
+            zh: {
+                translation: {
+                    "welcome": "欢迎使用 Visio-Conf",
+                    "description": "使用您的 France Travail 账户登录以访问安全的视频会议",
+                    "login_button": "使用 France Travail 登录",
+                    "logout_button": "退出登录",
+                    "join_meeting": "加入会议",
+                    "meeting_id": "会议 ID",
+                    "meeting_id_placeholder": "输入会议 ID（例如：room123）",
+                    "user_id": "用户 ID",
+                    "user_id_placeholder": "输入您的用户 ID",
+                    "terms": "使用条款",
+                    "privacy": "隐私政策",
+                    "loading": "加载中...",
+                    "error_status": "检查身份验证状态时出错",
+                    "error_logout": "退出登录时出错",
+                    "error_join_meeting": "加入会议时出错",
+                    "success_logout": "成功退出登录",
+                    "welcome_user": "欢迎，{{name}}！",
+                    "meeting_instructions": "输入会议 ID 以加入视频会议",
+                    "language": "语言",
+                    "health_check": "系统状态",
+                    "health_ok": "系统运行正常",
+                    "health_error": "检测到系统错误",
+                    "session_expired": "您的会话已过期。请重新登录。",
+                    "invalid_meeting_id": "请输入有效的会议 ID",
+                    "invalid_user_id": "请输入有效的用户 ID",
+                    "about": "关于 Visio-Conf",
+                    "version": "版本 2.0.0",
+                    "powered_by": "由 ZEGOCLOUD 和 France Travail 提供支持"
+                }
+            }
+        };
+    </script>
+    
+    <!-- Main React Application -->
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+        
+        // Error Boundary Component
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false };
+            }
+            
+            static getDerivedStateFromError(error) {
+                return { hasError: true };
+            }
+            
+            componentDidCatch(error, errorInfo) {
+                console.error('Error caught by boundary:', error, errorInfo);
+                document.getElementById('error-fallback').classList.remove('hidden');
+            }
+            
+            render() {
+                if (this.state.hasError) {
+                    return null;
+                }
+                
+                return this.props.children;
+            }
+        }
+        
+        // Initialize i18next
+        i18next
+            .use(i18nextBrowserLanguageDetector)
+            .init({
+                resources: translations,
+                fallbackLng: 'fr',
+                debug: false,
+                detection: {
+                    order: ['localStorage', 'navigator', 'htmlTag'],
+                    caches: ['localStorage'],
+                },
+                interpolation: {
+                    escapeValue: false,
+                }
+            });
+        
+        // Language Switcher Component
+        const LanguageSwitcher = () => {
+            const [currentLang, setCurrentLang] = useState(i18next.language);
+            
+            const languages = [
+                { code: 'fr', name: 'Français', flag: '🇫🇷' },
+                { code: 'en', name: 'English', flag: '🇺🇸' },
+                { code: 'es', name: 'Español', flag: '🇪🇸' },
+                { code: 'zh', name: '中文', flag: '🇨🇳' }
+            ];
+            
+            const changeLanguage = (lng) => {
+                i18next.changeLanguage(lng);
+                setCurrentLang(lng);
+                localStorage.setItem('language', lng);
+                document.documentElement.lang = lng;
+            };
+            
+            return (
+                <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                        {i18next.t('language')}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                        {languages.map((lang) => (
+                            <button
+                                key={lang.code}
+                                onClick={() => changeLanguage(lang.code)}
+                                className={`language-button px-3 py-2 text-sm rounded-md border transition-all duration-200 focus-visible ${
+                                    currentLang === lang.code
+                                        ? 'bg-blue-500 text-white border-blue-500 shadow-md'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                                }`}
+                                aria-label={`Switch to ${lang.name}`}
+                            >
+                                <span className="mr-1">{lang.flag}</span>
+                                {lang.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+        
+        // Health Check Component
+        const HealthCheck = () => {
+            const [health, setHealth] = useState(null);
+            const [loading, setLoading] = useState(true);
+            
+            useEffect(() => {
+                const checkHealth = async () => {
+                    try {
+                        const response = await fetch('/api/health');
+                        const data = await response.json();
+                        setHealth(data);
+                    } catch (error) {
+                        setHealth({ status: 'error', message: 'Failed to check health' });
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+                
+                checkHealth();
+                const interval = setInterval(checkHealth, 30000);
+                return () => clearInterval(interval);
+            }, []);
+            
+            if (loading) {
+                return (
+                    <div className="flex items-center space-x-2 text-sm text-white opacity-75">
+                        <div className="loading-spinner"></div>
+                        <span>{i18next.t('loading')}</span>
+                    </div>
+                );
+            }
+            
+            const isHealthy = health?.status === 'ok';
+            
+            return (
+                <div className={`flex items-center space-x-2 text-sm ${
+                    isHealthy ? 'text-green-300' : 'text-red-300'
+                }`}>
+                    <div className={`w-2 h-2 rounded-full ${
+                        isHealthy ? 'bg-green-400 pulse' : 'bg-red-400'
+                    }`}></div>
+                    <span>
+                        {isHealthy ? i18next.t('health_ok') : i18next.t('health_error')}
+                    </span>
+                </div>
+            );
+        };
+        
+        // Main App Component
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState('');
+            const [meetingId, setMeetingId] = useState('');
+            const [userId, setUserId] = useState('');
+            const [showVideoConference, setShowVideoConference] = useState(false);
+            
+            useEffect(() => {
+                checkAuthStatus();
+                // Hide loading screen after component mounts
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.display = 'none';
+                }, 1000);
+            }, []);
+            
+            const checkAuthStatus = async () => {
+                try {
+                    const response = await fetch('/api/auth/status');
+                    const data = await response.json();
+                    
+                    if (data.authenticated) {
+                        setUser(data.user);
+                        setUserId(data.user.id || data.user.name || 'user');
+                    }
+                } catch (err) {
+                    console.error('Error checking auth status:', err);
+                    setError(i18next.t('error_status'));
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const handleLogin = () => {
+                window.location.href = '/auth/francetravail/login';
+            };
+            
+            const handleLogout = async () => {
+                try {
+                    const response = await fetch('/api/auth/logout', { method: 'POST' });
+                    
+                    if (response.ok) {
+                        setUser(null);
+                        setShowVideoConference(false);
+                        setMeetingId('');
+                        setUserId('');
+                        setError('');
+                    } else {
+                        throw new Error('Logout failed');
+                    }
+                } catch (err) {
+                    console.error('Error during logout:', err);
+                    setError(i18next.t('error_logout'));
+                }
+            };
+            
+            const handleJoinMeeting = () => {
+                if (!meetingId.trim()) {
+                    setError(i18next.t('invalid_meeting_id'));
+                    return;
+                }
+                
+                if (!userId.trim()) {
+                    setError(i18next.t('invalid_user_id'));
+                    return;
+                }
+                
+                setError('');
+                setShowVideoConference(true);
+            };
+            
+            const handleLeaveMeeting = () => {
+                setShowVideoConference(false);
+            };
+            
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <div className="w-full max-w-2xl">
+                        {/* Header */}
+                        <header className="text-center mb-8 fade-in">
+                            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+                                {i18next.t('welcome')}
+                            </h1>
+                            <HealthCheck />
+                        </header>
+                        
+                        {/* Main Content */}
+                        <div className="glass-effect rounded-2xl shadow-2xl p-8 fade-in">
+                            {/* Language Switcher */}
+                            <LanguageSwitcher />
+                            
+                            {/* Error Display */}
+                            {error && (
+                                <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg fade-in">
+                                    <div className="flex items-center">
+                                        <span className="mr-2">⚠️</span>
+                                        {error}
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Loading State */}
+                            {loading ? (
+                                <div className="text-center py-8">
+                                    <div className="loading-spinner mx-auto mb-4"></div>
+                                    <p className="text-gray-600">{i18next.t('loading')}</p>
+                                </div>
+                            ) : user ? (
+                                <div className="space-y-6">
+                                    {/* User Welcome */}
+                                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg fade-in">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                                {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-green-800">
+                                                    {i18next.t('welcome_user', { name: user.name || user.id })}
+                                                </p>
+                                                <p className="text-sm text-green-600">
+                                                    {user.email || 'Authentifié'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {!showVideoConference ? (
+                                        <div className="space-y-6">
+                                            {/* Meeting Form */}
+                                            <div className="border-t pt-6">
+                                                <h2 className="text-xl font-semibold mb-4 text-white">
+                                                    {i18next.t('join_meeting')}
+                                                </h2>
+                                                
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <label htmlFor="meetingId" className="block text-sm font-medium text-white mb-2">
+                                                            {i18next.t('meeting_id')}
+                                                        </label>
+                                                        <input
+                                                            id="meetingId"
+                                                            type="text"
+                                                            value={meetingId}
+                                                            onChange={(e) => setMeetingId(e.target.value)}
+                                                            placeholder={i18next.t('meeting_id_placeholder')}
+                                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <div>
+                                                        <label htmlFor="userId" className="block text-sm font-medium text-white mb-2">
+                                                            {i18next.t('user_id')}
+                                                        </label>
+                                                        <input
+                                                            id="userId"
+                                                            type="text"
+                                                            value={userId}
+                                                            onChange={(e) => setUserId(e.target.value)}
+                                                            placeholder={i18next.t('user_id_placeholder')}
+                                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <button
+                                                        onClick={handleJoinMeeting}
+                                                        disabled={!meetingId.trim() || !userId.trim()}
+                                                        className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+                                                            meetingId.trim() && userId.trim()
+                                                                ? 'bg-green-500 text-white hover:bg-green-600 hover:shadow-lg transform hover:-translate-y-0.5'
+                                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                        }`}
+                                                    >
+                                                        {i18next.t('join_meeting')}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Logout Button */}
+                                            <button
+                                                onClick={handleLogout}
+                                                className="w-full py-3 px-4 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5"
+                                            >
+                                                {i18next.t('logout_button')}
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        /* Video Conference Placeholder */
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <h3 className="text-lg font-semibold text-white">
+                                                    {i18next.t('meeting_id')}: {meetingId}
+                                                </h3>
+                                                <button
+                                                    onClick={handleLeaveMeeting}
+                                                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                                                >
+                                                    Quitter
+                                                </button>
+                                            </div>
+                                            
+                                            <div className="video-container h-64 flex items-center justify-center">
+                                                <div className="text-white text-center">
+                                                    <div className="text-4xl mb-2">📹</div>
+                                                    <p>Zone de vidéoconférence</p>
+                                                    <p className="text-sm text-gray-300">
+                                                        Les flux vidéo ZEGOCLOUD apparaîtraient ici
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                /* Login Section */
+                                <div className="space-y-6 text-center">
+                                    <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <p className="text-blue-800 text-lg">
+                                            {i18next.t('description')}
+                                        </p>
+                                    </div>
+                                    
+                                    <button
+                                        onClick={handleLogin}
+                                        className="w-full py-4 px-6 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center space-x-3"
+                                    >
+                                        <span className="text-2xl">🏢</span>
+                                        <span>{i18next.t('login_button')}</span>
+                                    </button>
+                                </div>
+                            )}
+                            
+                            {/* Footer */}
+                            <footer className="mt-8 pt-6 border-t border-white border-opacity-20 text-center text-sm text-white opacity-75">
+                                <div className="space-x-4 mb-4">
+                                    <a href="/terms" className="hover:text-blue-300 transition-colors">
+                                        {i18next.t('terms')}
+                                    </a>
+                                    <span>|</span>
+                                    <a href="/privacy" className="hover:text-blue-300 transition-colors">
+                                        {i18next.t('privacy')}
+                                    </a>
+                                    <span>|</span>
+                                    <a href="/about" className="hover:text-blue-300 transition-colors">
+                                        {i18next.t('about')}
+                                    </a>
+                                </div>
+                                <p>{i18next.t('powered_by')}</p>
+                                <p className="mt-1">{i18next.t('version')}</p>
+                            </footer>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(
+            <ErrorBoundary>
+                <App />
+            </ErrorBoundary>
+        );
+    </script>
 </body>
 </html>
