@@ -1,0 +1,59 @@
+# Development Dockerfile for Visio-Conf v3.0
+# Optimized for development workflow with hot reload and debugging
+
+FROM node:20-alpine
+
+# Install development tools and dependencies
+RUN apk update && apk upgrade && \
+    apk add --no-cache \
+    git \
+    curl \
+    bash \
+    vim \
+    htop \
+    && rm -rf /var/cache/apk/*
+
+# Install global development tools
+RUN npm install -g \
+    nodemon \
+    npm-check-updates \
+    eslint \
+    prettier
+
+# Create app directory
+WORKDIR /app
+
+# Create non-root user for development
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S visioconf -u 1001 -G nodejs -s /bin/bash
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev dependencies)
+RUN npm install && npm cache clean --force
+
+# Change ownership of node_modules
+RUN chown -R visioconf:nodejs /app
+
+# Switch to non-root user
+USER visioconf
+
+# Set environment variables for development
+ENV NODE_ENV=development
+ENV PORT=3001
+ENV DEBUG=visio-conf:*
+
+# Create development directories
+RUN mkdir -p /app/logs /app/uploads /app/temp
+
+# Expose port and debugging port
+EXPOSE 3001 9229
+
+# Health check for development
+HEALTHCHECK --interval=60s --timeout=10s --start-period=10s --retries=2 \
+    CMD curl -f http://localhost:3001/api/health || exit 1
+
+# Start with nodemon for hot reload
+CMD ["nodemon", "--inspect=0.0.0.0:9229", "server.js"]
+

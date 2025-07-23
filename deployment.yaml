@@ -1,0 +1,177 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visio-conf-app
+  labels:
+    app: visio-conf
+    component: app
+    version: v3.0.0
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: visio-conf
+      component: app
+  template:
+    metadata:
+      labels:
+        app: visio-conf
+        component: app
+        version: v3.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: visio-conf-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+      - name: visio-conf
+        image: visio-conf:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 3001
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3001"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: visio-conf-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: visio-conf-secrets
+              key: redis-url
+        - name: SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: visio-conf-secrets
+              key: session-secret
+        - name: ZEGOCLOUD_APP_ID
+          valueFrom:
+            secretKeyRef:
+              name: visio-conf-secrets
+              key: zegocloud-app-id
+        - name: ZEGOCLOUD_SERVER_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: visio-conf-secrets
+              key: zegocloud-server-secret
+        - name: FRANCETRAVAIL_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: visio-conf-secrets
+              key: francetravail-client-id
+        - name: FRANCETRAVAIL_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: visio-conf-secrets
+              key: francetravail-client-secret
+        - name: FRANCETRAVAIL_REDIRECT_URI
+          valueFrom:
+            configMapKeyRef:
+              name: visio-conf-config
+              key: francetravail-redirect-uri
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: visio-conf-secrets
+              key: sentry-dsn
+              optional: true
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: visio-conf-config
+              key: log-level
+        envFrom:
+        - configMapRef:
+            name: visio-conf-config
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+        volumeMounts:
+        - name: app-logs
+          mountPath: /app/logs
+        - name: app-uploads
+          mountPath: /app/uploads
+        - name: tmp
+          mountPath: /tmp
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: app-logs
+        emptyDir: {}
+      - name: app-uploads
+        persistentVolumeClaim:
+          claimName: visio-conf-uploads-pvc
+      - name: tmp
+        emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - visio-conf
+              topologyKey: kubernetes.io/hostname
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 300
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 300
+

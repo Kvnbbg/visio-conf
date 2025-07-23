@@ -1,0 +1,81 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: visio-conf-base
+  annotations:
+    config.kubernetes.io/local-config: "true"
+
+resources:
+- deployment.yaml
+- service.yaml
+- configmap.yaml
+- storage.yaml
+- rbac.yaml
+- hpa.yaml
+- network-policy.yaml
+
+commonLabels:
+  app.kubernetes.io/name: visio-conf
+  app.kubernetes.io/version: v3.0.0
+  app.kubernetes.io/component: application
+  app.kubernetes.io/part-of: visio-conf-platform
+
+commonAnnotations:
+  config.kubernetes.io/origin: |
+    path: kubernetes/base/kustomization.yaml
+  app.kubernetes.io/managed-by: kustomize
+
+images:
+- name: visio-conf
+  newTag: v3.0.0
+
+namespace: visio-conf
+
+namePrefix: visio-conf-
+
+replicas:
+- name: visio-conf-app
+  count: 3
+
+configMapGenerator:
+- name: build-metadata
+  literals:
+  - build.date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+  - build.version=v3.0.0
+  - build.commit=$(git rev-parse --short HEAD)
+
+secretGenerator:
+- name: visio-conf-secrets-template
+  literals:
+  - database-url=PLACEHOLDER
+  - redis-url=PLACEHOLDER
+  - session-secret=PLACEHOLDER
+  - zegocloud-app-id=PLACEHOLDER
+  - zegocloud-server-secret=PLACEHOLDER
+  - francetravail-client-id=PLACEHOLDER
+  - francetravail-client-secret=PLACEHOLDER
+  - sentry-dsn=PLACEHOLDER
+  type: Opaque
+
+patchesStrategicMerge:
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: visio-conf-app
+  spec:
+    template:
+      metadata:
+        annotations:
+          config.hash: $(kustomize cfg hash .)
+
+vars:
+- name: APP_VERSION
+  objref:
+    kind: ConfigMap
+    name: build-metadata
+    apiVersion: v1
+  fieldref:
+    fieldpath: data.build\.version
+

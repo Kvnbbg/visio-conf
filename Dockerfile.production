@@ -1,0 +1,104 @@
+# Multi-stage Dockerfile for Visio-Conf v3.0 Production
+# Optimized for security, performance, and minimal image size
+
+# Stage 1: Dependencies installation
+FROM node:20-alpine AS dependencies
+
+# Install security updates and required packages
+RUN apk update && apk upgrade && \
+    apk add --no-cache \
+    dumb-init \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Create app directory with proper permissions
+WORKDIR /app
+
+# Copy package files for dependency installation
+COPY package*.json ./
+COPY .npmrc* ./
+
+# Install dependencies with npm ci for production
+RUN npm ci --only=production --no-audit --no-fund && \
+    npm cache clean --force
+
+# Stage 2: Build stage (if needed for future TypeScript/build process)
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci --no-audit --no-fund
+
+# Copy source code
+COPY . .
+
+# Build application (placeholder for future TypeScript build)
+# RUN npm run build
+
+# Stage 3: Production runtime
+FROM node:20-alpine AS production
+
+# Install security updates and minimal runtime dependencies
+RUN apk update && apk upgrade && \
+    apk add --no-cache \
+    dumb-init \
+    curl \
+    ca-certificates \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S visioconf -u 1001 -G nodejs
+
+# Set working directory
+WORKDIR /app
+
+# Copy production dependencies from dependencies stage
+COPY --from=dependencies --chown=visioconf:nodejs /app/node_modules ./node_modules
+
+# Copy application code
+COPY --chown=visioconf:nodejs . .
+
+# Remove unnecessary files for production
+RUN rm -rf \
+    tests/ \
+    scripts/ \
+    .git/ \
+    .github/ \
+    *.md \
+    .env.example \
+    .env.secure.example \
+    server-backup.js \
+    Dockerfile* \
+    docker-compose* \
+    && npm prune --production
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3001
+ENV USER=visioconf
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/logs /app/uploads /app/temp && \
+    chown -R visioconf:nodejs /app/logs /app/uploads /app/temp
+
+# Switch to non-root user
+USER visioconf
+
+# Expose port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3001/api/health || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["node", "server-secure.js"]
+

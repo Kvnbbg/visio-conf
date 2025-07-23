@@ -1,0 +1,193 @@
+# Docker Compose for Visio-Conf v3.0 Development
+# Optimized for development workflow with hot reload and debugging
+
+version: '3.8'
+
+services:
+  # Main application service for development
+  visio-conf-dev:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.development
+    container_name: visio-conf-dev
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+      - "9229:9229"  # Node.js debugging port
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgresql://visioconf:devpassword@postgres-dev:5432/visioconf_dev
+      - REDIS_URL=redis://redis-dev:6379
+      - SESSION_SECRET=dev-session-secret-change-in-production
+      - ZEGOCLOUD_APP_ID=${ZEGOCLOUD_APP_ID:-dev_app_id}
+      - ZEGOCLOUD_SERVER_SECRET=${ZEGOCLOUD_SERVER_SECRET:-dev_server_secret}
+      - FRANCETRAVAIL_CLIENT_ID=${FRANCETRAVAIL_CLIENT_ID:-dev_client_id}
+      - FRANCETRAVAIL_CLIENT_SECRET=${FRANCETRAVAIL_CLIENT_SECRET:-dev_client_secret}
+      - FRANCETRAVAIL_REDIRECT_URI=http://localhost:3001/auth/francetravail/callback
+      - LOG_LEVEL=debug
+      - DEBUG=visio-conf:*
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      - /app/node_modules  # Prevent overwriting node_modules
+      - dev-logs:/app/logs
+      - dev-uploads:/app/uploads
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
+      redis-dev:
+        condition: service_healthy
+    networks:
+      - visio-dev-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # PostgreSQL for development
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: visio-conf-postgres-dev
+    restart: unless-stopped
+    ports:
+      - "5432:5432"  # Expose for external tools
+    environment:
+      - POSTGRES_DB=visioconf_dev
+      - POSTGRES_USER=visioconf
+      - POSTGRES_PASSWORD=devpassword
+      - POSTGRES_INITDB_ARGS=--auth-host=md5
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+      - ./docker/postgres/init-dev.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - visio-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U visioconf -d visioconf_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis for development
+  redis-dev:
+    image: redis:7-alpine
+    container_name: visio-conf-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"  # Expose for external tools
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-dev-data:/data
+    networks:
+      - visio-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+
+  # Adminer for database management
+  adminer:
+    image: adminer:latest
+    container_name: visio-conf-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres-dev
+    depends_on:
+      - postgres-dev
+    networks:
+      - visio-dev-network
+
+  # Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: visio-conf-redis-commander
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis-dev:6379
+    depends_on:
+      - redis-dev
+    networks:
+      - visio-dev-network
+
+  # MailHog for email testing
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: visio-conf-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - visio-dev-network
+
+  # Prometheus for development monitoring
+  prometheus-dev:
+    image: prom/prometheus:latest
+    container_name: visio-conf-prometheus-dev
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus-dev.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-dev-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=24h'
+      - '--web.enable-lifecycle'
+    networks:
+      - visio-dev-network
+
+  # Grafana for development dashboards
+  grafana-dev:
+    image: grafana/grafana:latest
+    container_name: visio-conf-grafana-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - grafana-dev-data:/var/lib/grafana
+      - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./docker/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus-dev
+    networks:
+      - visio-dev-network
+
+networks:
+  visio-dev-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+
+volumes:
+  postgres-dev-data:
+    driver: local
+  redis-dev-data:
+    driver: local
+  prometheus-dev-data:
+    driver: local
+  grafana-dev-data:
+    driver: local
+  dev-logs:
+    driver: local
+  dev-uploads:
+    driver: local
+

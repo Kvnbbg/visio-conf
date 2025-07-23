@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: visio-conf-service-account
+  labels:
+    app: visio-conf
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: visio-conf-role
+  labels:
+    app: visio-conf
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: visio-conf-role-binding
+  labels:
+    app: visio-conf
+subjects:
+- kind: ServiceAccount
+  name: visio-conf-service-account
+  namespace: default
+roleRef:
+  kind: Role
+  name: visio-conf-role
+  apiGroup: rbac.authorization.k8s.io
+

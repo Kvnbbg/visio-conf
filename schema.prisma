@@ -1,0 +1,437 @@
+// Prisma Schema for Visio-Conf v3.0
+// Complete database schema with duplicate prevention and optimizations
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = [uuid_ossp(map: "uuid-ossp"), citext]
+}
+
+// User management and authentication
+model User {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email             String   @unique @db.Citext // Case-insensitive email
+  emailVerified     Boolean  @default(false)
+  emailVerifiedAt   DateTime?
+  
+  // Profile information
+  firstName         String   @db.VarChar(50)
+  lastName          String   @db.VarChar(50)
+  displayName       String?  @db.VarChar(100)
+  avatar            String?  @db.VarChar(500)
+  language          String   @default("fr") @db.VarChar(5)
+  timezone          String   @default("Europe/Paris") @db.VarChar(50)
+  
+  // Authentication data
+  passwordHash      String?  @db.VarChar(255)
+  lastLoginAt       DateTime?
+  loginCount        Int      @default(0)
+  
+  // France Travail OAuth data
+  franceTravailId   String?  @unique @db.VarChar(100)
+  franceTravailData Json?    // Store additional OAuth data
+  
+  // Account status
+  isActive          Boolean  @default(true)
+  isVerified        Boolean  @default(false)
+  isSuspended       Boolean  @default(false)
+  suspendedAt       DateTime?
+  suspendedReason   String?  @db.Text
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime? // Soft delete
+  
+  // Relations
+  ownedMeetings     Meeting[] @relation("MeetingOwner")
+  participations    MeetingParticipant[]
+  sessions          UserSession[]
+  auditLogs         AuditLog[]
+  notifications     Notification[]
+  
+  @@map("users")
+  @@index([email])
+  @@index([franceTravailId])
+  @@index([createdAt])
+  @@index([lastLoginAt])
+}
+
+// Meeting management
+model Meeting {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  // Meeting details
+  title             String   @db.VarChar(255)
+  description       String?  @db.Text
+  meetingId         String   @unique @db.VarChar(50) // ZEGOCLOUD meeting ID
+  
+  // Scheduling
+  startTime         DateTime
+  endTime           DateTime
+  duration          Int      // Duration in minutes
+  timezone          String   @db.VarChar(50)
+  
+  // Meeting settings
+  isRecording       Boolean  @default(false)
+  isPublic          Boolean  @default(false)
+  maxParticipants   Int      @default(50)
+  requireAuth       Boolean  @default(true)
+  allowScreenShare  Boolean  @default(true)
+  allowChat         Boolean  @default(true)
+  allowWhiteboard   Boolean  @default(false)
+  
+  // Meeting status
+  status            MeetingStatus @default(SCHEDULED)
+  actualStartTime   DateTime?
+  actualEndTime     DateTime?
+  
+  // Owner and participants
+  ownerId           String   @db.Uuid
+  owner             User     @relation("MeetingOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime? // Soft delete
+  
+  // Relations
+  participants      MeetingParticipant[]
+  recordings        Recording[]
+  chatMessages      ChatMessage[]
+  auditLogs         AuditLog[]
+  
+  @@map("meetings")
+  @@index([ownerId])
+  @@index([startTime])
+  @@index([status])
+  @@index([meetingId])
+  @@index([createdAt])
+  
+  // Prevent duplicate meetings at the same time for the same owner
+  @@unique([ownerId, startTime], name: "unique_owner_meeting_time")
+}
+
+// Meeting participants with role management
+model MeetingParticipant {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  meetingId         String   @db.Uuid
+  meeting           Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  
+  userId            String?  @db.Uuid // Null for guest participants
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  // Guest participant info (when userId is null)
+  guestName         String?  @db.VarChar(100)
+  guestEmail        String?  @db.VarChar(255)
+  
+  // Participation details
+  role              ParticipantRole @default(PARTICIPANT)
+  joinedAt          DateTime?
+  leftAt            DateTime?
+  duration          Int?     // Duration in seconds
+  
+  // Permissions
+  canShare          Boolean  @default(true)
+  canChat           Boolean  @default(true)
+  canRecord         Boolean  @default(false)
+  isMuted           Boolean  @default(false)
+  isVideoOff        Boolean  @default(false)
+  
+  // Status
+  status            ParticipantStatus @default(INVITED)
+  invitedAt         DateTime @default(now())
+  respondedAt       DateTime?
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@map("meeting_participants")
+  @@index([meetingId])
+  @@index([userId])
+  @@index([status])
+  
+  // Prevent duplicate participants (user or guest) in the same meeting
+  @@unique([meetingId, userId], name: "unique_user_meeting")
+  @@unique([meetingId, guestEmail], name: "unique_guest_meeting")
+}
+
+// User sessions for security and monitoring
+model UserSession {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  userId            String   @db.Uuid
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Session details
+  sessionToken      String   @unique @db.VarChar(255)
+  refreshToken      String?  @unique @db.VarChar(255)
+  
+  // Device and location info
+  userAgent         String?  @db.Text
+  ipAddress         String   @db.Inet
+  deviceType        String?  @db.VarChar(50)
+  browser           String?  @db.VarChar(100)
+  os                String?  @db.VarChar(100)
+  location          String?  @db.VarChar(100)
+  
+  // Session lifecycle
+  expiresAt         DateTime
+  lastActivityAt    DateTime @default(now())
+  isActive          Boolean  @default(true)
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@map("user_sessions")
+  @@index([userId])
+  @@index([sessionToken])
+  @@index([expiresAt])
+  @@index([isActive])
+}
+
+// Recording management
+model Recording {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  meetingId         String   @db.Uuid
+  meeting           Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  
+  // Recording details
+  title             String   @db.VarChar(255)
+  filename          String   @unique @db.VarChar(500)
+  filePath          String   @db.VarChar(1000)
+  fileSize          BigInt   // File size in bytes
+  duration          Int      // Duration in seconds
+  format            String   @db.VarChar(10) // mp4, webm, etc.
+  quality           String   @db.VarChar(20) // HD, FHD, etc.
+  
+  // Recording metadata
+  startedAt         DateTime
+  endedAt           DateTime
+  recordedBy        String   @db.Uuid // User who started recording
+  
+  // Access control
+  isPublic          Boolean  @default(false)
+  downloadUrl       String?  @db.VarChar(1000)
+  streamUrl         String?  @db.VarChar(1000)
+  expiresAt         DateTime? // Auto-delete date
+  
+  // Processing status
+  status            RecordingStatus @default(PROCESSING)
+  processingError   String?  @db.Text
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime? // Soft delete
+  
+  @@map("recordings")
+  @@index([meetingId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([expiresAt])
+}
+
+// Chat messages during meetings
+model ChatMessage {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  meetingId         String   @db.Uuid
+  meeting           Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  
+  // Message details
+  content           String   @db.Text
+  messageType       MessageType @default(TEXT)
+  
+  // Sender info (can be user or guest)
+  senderId          String?  @db.Uuid
+  senderName        String   @db.VarChar(100)
+  senderEmail       String?  @db.VarChar(255)
+  
+  // Message metadata
+  isPrivate         Boolean  @default(false)
+  recipientId       String?  @db.Uuid // For private messages
+  isEdited          Boolean  @default(false)
+  editedAt          DateTime?
+  
+  // Timestamps
+  sentAt            DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime? // Soft delete
+  
+  @@map("chat_messages")
+  @@index([meetingId])
+  @@index([senderId])
+  @@index([sentAt])
+}
+
+// Audit logging for security and compliance
+model AuditLog {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  // Event details
+  action            String   @db.VarChar(100)
+  resource          String   @db.VarChar(100)
+  resourceId        String?  @db.VarChar(100)
+  
+  // User context
+  userId            String?  @db.Uuid
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userEmail         String?  @db.VarChar(255)
+  
+  // Request context
+  ipAddress         String   @db.Inet
+  userAgent         String?  @db.Text
+  sessionId         String?  @db.VarChar(255)
+  
+  // Event data
+  oldValues         Json?
+  newValues         Json?
+  metadata          Json?
+  
+  // Meeting context (if applicable)
+  meetingId         String?  @db.Uuid
+  meeting           Meeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  
+  // Result
+  success           Boolean  @default(true)
+  errorMessage      String?  @db.Text
+  
+  // Timestamp
+  createdAt         DateTime @default(now())
+  
+  @@map("audit_logs")
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@index([meetingId])
+}
+
+// Notification system
+model Notification {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  userId            String   @db.Uuid
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Notification details
+  type              NotificationType
+  title             String   @db.VarChar(255)
+  message           String   @db.Text
+  data              Json?    // Additional notification data
+  
+  // Delivery
+  isRead            Boolean  @default(false)
+  readAt            DateTime?
+  isSent            Boolean  @default(false)
+  sentAt            DateTime?
+  
+  // Channels
+  sendEmail         Boolean  @default(true)
+  sendPush          Boolean  @default(true)
+  sendInApp         Boolean  @default(true)
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  expiresAt         DateTime? // Auto-delete date
+  
+  @@map("notifications")
+  @@index([userId])
+  @@index([type])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// System configuration and feature flags
+model SystemConfig {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  
+  key               String   @unique @db.VarChar(100)
+  value             String   @db.Text
+  description       String?  @db.Text
+  dataType          String   @default("string") @db.VarChar(20) // string, number, boolean, json
+  
+  // Metadata
+  category          String   @db.VarChar(50)
+  isPublic          Boolean  @default(false)
+  isEditable        Boolean  @default(true)
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@map("system_config")
+  @@index([category])
+  @@index([isPublic])
+}
+
+// Enums
+enum MeetingStatus {
+  SCHEDULED
+  ACTIVE
+  ENDED
+  CANCELLED
+  
+  @@map("meeting_status")
+}
+
+enum ParticipantRole {
+  HOST
+  MODERATOR
+  PARTICIPANT
+  OBSERVER
+  
+  @@map("participant_role")
+}
+
+enum ParticipantStatus {
+  INVITED
+  ACCEPTED
+  DECLINED
+  JOINED
+  LEFT
+  
+  @@map("participant_status")
+}
+
+enum RecordingStatus {
+  PROCESSING
+  READY
+  FAILED
+  EXPIRED
+  
+  @@map("recording_status")
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  IMAGE
+  SYSTEM
+  
+  @@map("message_type")
+}
+
+enum NotificationType {
+  MEETING_INVITATION
+  MEETING_REMINDER
+  MEETING_STARTED
+  MEETING_ENDED
+  RECORDING_READY
+  SYSTEM_ALERT
+  
+  @@map("notification_type")
+}
+
