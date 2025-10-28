@@ -31,7 +31,9 @@ const {
     requestLogger,
     errorHandler,
     notFoundHandler,
-    rateLimit: createRateLimit
+    rateLimit: createRateLimit,
+    requireAuth,
+    validateRequest
 } = require('./lib/middleware');
 const {
     createRedisClient,
@@ -304,36 +306,40 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 // Generate ZEGOCLOUD token endpoint
-app.post('/api/generate-token', (req, res) => {
-    const { roomID, userID } = req.body || {};
+app.post('/api/generate-token',
+    requireAuth,
+    validateRequest(['roomID', 'userID']),
+    (req, res) => {
+        const { roomID, userID } = req.body || {};
 
-    const validation = validateTokenParams(roomID, userID);
-    if (!validation.isValid) {
-        return res.status(400).json({ error: validation.error });
+        const validation = validateTokenParams(roomID, userID);
+        if (!validation.isValid) {
+            return res.status(400).json({ error: validation.error });
+        }
+
+        const effectiveUserId = req.session?.user?.id || userID;
+
+        try {
+            const token = generateZegoToken(
+                ZEGOCLOUD_APP_ID,
+                ZEGOCLOUD_SERVER_SECRET,
+                roomID,
+                effectiveUserId
+            );
+
+            res.json({
+                token,
+                user: {
+                    id: effectiveUserId,
+                    name: req.session.user.name
+                }
+            });
+        } catch (error) {
+            logger.error('Token generation failed', { error: error.message });
+            res.status(500).json({ error: 'Erreur lors de la génération du token' });
+        }
     }
-
-    const effectiveUserId = (req.session && req.session.user && req.session.user.id) || userID;
-
-    try {
-        const token = generateZegoToken(
-            ZEGOCLOUD_APP_ID,
-            ZEGOCLOUD_SERVER_SECRET,
-            roomID,
-            effectiveUserId
-        );
-
-        res.json({
-            token,
-            user: req.session?.user ? {
-                id: req.session.user.id,
-                name: req.session.user.name
-            } : null
-        });
-    } catch (error) {
-        logger.error('Token generation failed', { error: error.message });
-        res.status(500).json({ error: 'Erreur lors de la génération du token' });
-    }
-});
+);
 
 // Refresh France Travail access token
 app.post('/api/auth/refresh', async (req, res) => {
