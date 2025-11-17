@@ -164,6 +164,11 @@
                     "session_expired": "Votre session a expiré. Veuillez vous reconnecter.",
                     "invalid_meeting_id": "Veuillez saisir un ID de réunion valide",
                     "invalid_user_id": "Veuillez saisir un ID utilisateur valide",
+                    "login_unavailable": "Configurez France Travail OAuth pour activer ce bouton.",
+                    "demo_login_title": "Mode démonstration local",
+                    "demo_login_description": "Lancez instantanément Visio-Conf sans comptes externes pour tester l'interface.",
+                    "demo_login_button": "Démarrer une session démo",
+                    "error_demo_login": "Impossible de démarrer la session démo",
                     "about": "À propos de Visio-Conf",
                     "version": "Version 2.0.0",
                     "powered_by": "Propulsé par ZEGOCLOUD et France Travail"
@@ -196,6 +201,11 @@
                     "session_expired": "Your session has expired. Please log in again.",
                     "invalid_meeting_id": "Please enter a valid meeting ID",
                     "invalid_user_id": "Please enter a valid user ID",
+                    "login_unavailable": "Configure France Travail OAuth to enable this button.",
+                    "demo_login_title": "Instant demo mode",
+                    "demo_login_description": "Launch Visio-Conf locally without external accounts to explore the UX.",
+                    "demo_login_button": "Start demo session",
+                    "error_demo_login": "Unable to start the demo session",
                     "about": "About Visio-Conf",
                     "version": "Version 2.0.0",
                     "powered_by": "Powered by ZEGOCLOUD and France Travail"
@@ -228,6 +238,11 @@
                     "session_expired": "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.",
                     "invalid_meeting_id": "Por favor, ingresa un ID de reunión válido",
                     "invalid_user_id": "Por favor, ingresa un ID de usuario válido",
+                    "login_unavailable": "Configura OAuth de France Travail para activar este botón.",
+                    "demo_login_title": "Modo demostración instantáneo",
+                    "demo_login_description": "Inicia Visio-Conf localmente sin cuentas externas para explorar la interfaz.",
+                    "demo_login_button": "Iniciar sesión demo",
+                    "error_demo_login": "No se puede iniciar la sesión demo",
                     "about": "Acerca de Visio-Conf",
                     "version": "Versión 2.0.0",
                     "powered_by": "Impulsado por ZEGOCLOUD y France Travail"
@@ -260,6 +275,11 @@
                     "session_expired": "您的会话已过期。请重新登录。",
                     "invalid_meeting_id": "请输入有效的会议 ID",
                     "invalid_user_id": "请输入有效的用户 ID",
+                    "login_unavailable": "配置 France Travail OAuth 以启用此按钮。",
+                    "demo_login_title": "即时演示模式",
+                    "demo_login_description": "无需外部账号即可在本地快速体验 Visio-Conf。",
+                    "demo_login_button": "启动演示会话",
+                    "error_demo_login": "无法启动演示会话",
                     "about": "关于 Visio-Conf",
                     "version": "版本 2.0.0",
                     "powered_by": "由 ZEGOCLOUD 和 France Travail 提供支持"
@@ -413,15 +433,30 @@
             const [meetingId, setMeetingId] = useState('');
             const [userId, setUserId] = useState('');
             const [showVideoConference, setShowVideoConference] = useState(false);
+            const [appConfig, setAppConfig] = useState({ demoMode: false, franceTravailEnabled: true });
+            const [demoLoading, setDemoLoading] = useState(false);
             
             useEffect(() => {
+                loadConfig();
                 checkAuthStatus();
                 // Hide loading screen after component mounts
                 setTimeout(() => {
                     document.getElementById('loading-screen').style.display = 'none';
                 }, 1000);
             }, []);
-            
+
+            const loadConfig = async () => {
+                try {
+                    const response = await fetch('/api/config');
+                    if (response.ok) {
+                        const data = await response.json();
+                        setAppConfig(data);
+                    }
+                } catch (err) {
+                    console.warn('Unable to load runtime config', err);
+                }
+            };
+
             const checkAuthStatus = async () => {
                 try {
                     const response = await fetch('/api/auth/status');
@@ -441,6 +476,35 @@
             
             const handleLogin = () => {
                 window.location.href = '/auth/francetravail/login';
+            };
+
+            const handleDemoLogin = async () => {
+                if (demoLoading) {
+                    return;
+                }
+
+                setDemoLoading(true);
+                setError('');
+
+                try {
+                    const response = await fetch('/api/auth/demo-login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok || !data.success) {
+                        throw new Error('Demo login failed');
+                    }
+
+                    setUser(data.user);
+                    setUserId(data.user.id || 'demo-user');
+                } catch (err) {
+                    console.error('Error during demo login:', err);
+                    setError(i18next.t('error_demo_login'));
+                } finally {
+                    setDemoLoading(false);
+                }
             };
             
             const handleLogout = async () => {
@@ -481,6 +545,9 @@
                 setShowVideoConference(false);
             };
             
+            const franceTravailDisabled = !appConfig.franceTravailEnabled;
+            const showDemoCta = appConfig.demoMode;
+
             return (
                 <div className="min-h-screen flex items-center justify-center p-4">
                     <div className="w-full max-w-2xl">
@@ -629,11 +696,48 @@
                                     
                                     <button
                                         onClick={handleLogin}
-                                        className="w-full py-4 px-6 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center space-x-3"
+                                        disabled={franceTravailDisabled}
+                                        className={`w-full py-4 px-6 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-3 ${
+                                            franceTravailDisabled
+                                                ? 'bg-blue-300 text-blue-100 cursor-not-allowed'
+                                                : 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-lg transform hover:-translate-y-0.5'
+                                        }`}
                                     >
                                         <span className="text-2xl">🏢</span>
                                         <span>{i18next.t('login_button')}</span>
                                     </button>
+                                    {franceTravailDisabled && (
+                                        <p className="text-sm text-yellow-100">
+                                            {i18next.t('login_unavailable')}
+                                        </p>
+                                    )}
+
+                                    {showDemoCta && (
+                                        <div className="p-6 bg-white bg-opacity-10 border border-white/30 rounded-lg text-left space-y-3">
+                                            <div className="flex items-center space-x-3">
+                                                <div className="text-2xl">⚡</div>
+                                                <div>
+                                                    <p className="text-white font-semibold">
+                                                        {i18next.t('demo_login_title')}
+                                                    </p>
+                                                    <p className="text-white text-opacity-80 text-sm">
+                                                        {i18next.t('demo_login_description')}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={handleDemoLogin}
+                                                disabled={demoLoading}
+                                                className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+                                                    demoLoading
+                                                        ? 'bg-gray-300 text-gray-500 cursor-wait'
+                                                        : 'bg-emerald-500 text-white hover:bg-emerald-600 hover:shadow-lg transform hover:-translate-y-0.5'
+                                                }`}
+                                            >
+                                                {demoLoading ? i18next.t('loading') : i18next.t('demo_login_button')}
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             

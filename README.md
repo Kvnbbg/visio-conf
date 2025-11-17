@@ -42,6 +42,16 @@ A robust, multilingual video conferencing application with France Travail OAuth 
 
 ## 🚀 Quick Start
 
+### ⚡ Instant Demo (no external accounts required)
+
+1. Install dependencies: `npm install`
+2. Copy the sample environment file: `cp env.example .env`
+3. Ensure `DEMO_MODE=true` is present in `.env` (enabled by default in development)
+4. Start the application: `npm run dev`
+5. Visit [http://localhost:3000](http://localhost:3000) and click **"Start demo session"**
+
+You now have a fully interactive UI that behaves like a secure Zoom/Teams experience without configuring France Travail or ZEGOCLOUD credentials. When you're ready to plug in real services, disable demo mode and add your secrets as documented below.
+
 ### Prerequisites
 
 - **Node.js** ≥ 18.0.0
@@ -83,6 +93,7 @@ Create a `.env` file with the following configuration:
 NODE_ENV=development
 PORT=3001
 SESSION_SECRET=your-super-secret-session-key
+DEMO_MODE=true # Disable in production once OAuth is configured
 
 # ZEGOCLOUD Configuration
 ZEGOCLOUD_APP_ID=your_zegocloud_app_id
@@ -100,6 +111,11 @@ REDIS_URL=redis://localhost:6379
 SENTRY_DSN=your_sentry_dsn
 LOG_LEVEL=info
 ```
+
+#### Demo Mode Controls
+
+- `DEMO_MODE=true` (default in development) exposes `/api/auth/demo-login`, enabling instant UX testing without OAuth tokens.
+- Set `DEMO_MODE=false` (or remove it) once `FRANCETRAVAIL_CLIENT_ID` and `FRANCETRAVAIL_CLIENT_SECRET` are populated to enforce real authentication flows.
 
 ### Getting API Credentials
 

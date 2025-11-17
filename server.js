@@ -75,6 +75,16 @@ if (process.env.SENTRY_DSN) {
 }
 
 const isProduction = process.env.NODE_ENV === 'production';
+const hasFranceTravailCredentials = Boolean(
+    process.env.FRANCETRAVAIL_CLIENT_ID &&
+    process.env.FRANCETRAVAIL_CLIENT_SECRET &&
+    process.env.FRANCETRAVAIL_CLIENT_ID !== 'demo_client_id'
+);
+const isDemoMode = process.env.DEMO_MODE === 'true' || (!process.env.DEMO_MODE && !hasFranceTravailCredentials);
+
+if (isDemoMode) {
+    logger.warn('Application démarrée en mode démonstration. Utilisez DEMO_MODE=false en production.');
+}
 
 app.set('trust proxy', 1);
 
@@ -200,6 +210,14 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Application configuration endpoint (used by the SPA)
+app.get('/api/config', (req, res) => {
+    res.json({
+        demoMode: isDemoMode,
+        franceTravailEnabled: hasFranceTravailCredentials
+    });
+});
+
 // Session status endpoint
 app.get('/api/auth/status', (req, res) => {
     if (req.session && req.session.user) {
@@ -214,6 +232,10 @@ app.get('/api/auth/status', (req, res) => {
 
 // Initiate France Travail authentication
 app.get('/auth/francetravail/login', (req, res) => {
+    if (!hasFranceTravailCredentials) {
+        return res.status(400).json({ error: 'France Travail OAuth non configuré' });
+    }
+
     try {
         const { codeVerifier, codeChallenge } = generatePKCE();
         const state = generateState();
@@ -288,6 +310,26 @@ app.get('/auth/francetravail/callback', async (req, res) => {
         logger.error('OAuth callback processing failed', { error: callbackError.message });
         res.redirect('/?error=callback_error');
     }
+});
+
+// Optional demo login endpoint
+app.post('/api/auth/demo-login', (req, res) => {
+    if (!isDemoMode) {
+        return res.status(404).json({ error: 'Route non disponible' });
+    }
+
+    const now = Date.now();
+    const demoUser = {
+        id: `demo_${now}`,
+        name: req.body?.name?.trim() || 'Utilisateur Démo',
+        email: req.body?.email?.trim() || 'demo@visio-conf.local',
+        accessToken: 'demo_token',
+        refreshToken: 'demo_refresh_token'
+    };
+
+    req.session.user = demoUser;
+
+    res.json({ success: true, user: demoUser });
 });
 
 // Logout endpoint
