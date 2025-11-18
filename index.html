@@ -6,9 +6,12 @@
     <title>Visio-Conf - Vidéoconférence sécurisée avec France Travail</title>
     <meta name="description" content="Application de vidéoconférence sécurisée intégrée avec l'authentification France Travail">
     <meta name="keywords" content="vidéoconférence, France Travail, ZEGOCLOUD, OAuth, sécurisé">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="author" content="TECHANDSTREAM Proprietary License">
+
+    <!-- favicon -->
+    <link rel="icon" href="/techandstream-logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="/techandstream-logo.png">
+    <meta name="theme-color" content="#000000">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -30,25 +33,73 @@
     
     <!-- Custom styles -->
     <style>
+        :root {
+            color-scheme: dark;
+            --primary: #5b8def;
+            --primary-dark: #1d3a8a;
+            --accent: #22d3ee;
+            --text-strong: #f8fafc;
+            --card-bg: rgba(15, 23, 42, 0.78);
+            --border-soft: rgba(255, 255, 255, 0.18);
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-sans, 'Inter', sans-serif);
+            background: radial-gradient(circle at top, rgba(14, 165, 233, 0.35), transparent 45%),
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.4), transparent 55%),
+                #030712;
+            color: #0f172a;
+        }
+
         .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: transparent;
         }
-        
+
+        .page-wrapper {
+            min-height: 100vh;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .content-shell {
+            width: 100%;
+            max-width: 960px;
+        }
+
         .glass-effect {
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(18px);
+            background: var(--card-bg);
+            border: 1px solid var(--border-soft);
+            box-shadow: 0 25px 70px rgba(15, 23, 42, 0.35);
         }
-        
+
+        .glass-panel {
+            border-radius: 32px;
+            padding: 2.5rem;
+        }
+
+        .hero-title {
+            font-size: clamp(2.25rem, 4vw, 3.25rem);
+            color: var(--text-strong);
+            letter-spacing: -0.03em;
+        }
+
+        .hero-subtitle {
+            color: rgba(248, 250, 252, 0.85);
+        }
+
         .loading-spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top: 3px solid var(--accent);
             border-radius: 50%;
             width: 20px;
             height: 20px;
             animation: spin 1s linear infinite;
         }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -72,23 +123,20 @@
             50% { opacity: 0.5; }
         }
         
-        /* Accessibility improvements */
         .focus-visible:focus {
-            outline: 2px solid #3b82f6;
+            outline: 2px solid var(--accent);
             outline-offset: 2px;
         }
-        
-        /* Language switcher styles */
+
         .language-button {
             transition: all 0.2s ease;
         }
-        
+
         .language-button:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         
-        /* Video conference styles */
         .video-container {
             position: relative;
             background: #000;
@@ -106,6 +154,80 @@
         
         .control-button:active {
             transform: scale(0.95);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(15, 23, 42, 0.65);
+            color: var(--text-strong);
+        }
+
+        .input-field::placeholder {
+            color: rgba(248, 250, 252, 0.55);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.35);
+        }
+
+        .trust-badges {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .trust-badge {
+            border-radius: 9999px;
+            padding: 0.45rem 1.15rem;
+            font-size: 0.85rem;
+            color: var(--text-strong);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .feature-card {
+            border-radius: 1rem;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-strong);
+        }
+
+        @media (max-width: 640px) {
+            .glass-panel {
+                padding: 1.5rem;
+                border-radius: 1.75rem;
+            }
+
+            .trust-badges {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .trust-badge {
+                text-align: center;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
         }
     </style>
 </head>
@@ -353,18 +475,20 @@
             
             return (
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                    <label className="block text-sm font-medium text-white text-opacity-80 mb-3">
                         {i18next.t('language')}
                     </label>
                     <div className="flex flex-wrap gap-2">
                         {languages.map((lang) => (
                             <button
                                 key={lang.code}
+                                type="button"
                                 onClick={() => changeLanguage(lang.code)}
+                                aria-pressed={currentLang === lang.code}
                                 className={`language-button px-3 py-2 text-sm rounded-md border transition-all duration-200 focus-visible ${
                                     currentLang === lang.code
-                                        ? 'bg-blue-500 text-white border-blue-500 shadow-md'
-                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                                        ? 'bg-blue-500/90 text-white border-blue-400 shadow-lg'
+                                        : 'bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-white/40'
                                 }`}
                                 aria-label={`Switch to ${lang.name}`}
                             >
@@ -424,7 +548,49 @@
                 </div>
             );
         };
-        
+
+        const TrustBadges = () => (
+            <div className="trust-badges my-6" role="list" aria-label="Certifications de sécurité">
+                {[
+                    { icon: '🔐', label: 'Chiffrement AES-256' },
+                    { icon: '🛡️', label: 'Conforme RGPD' },
+                    { icon: '🌐', label: 'Infrastructure France Travail' },
+                ].map((badge) => (
+                    <span key={badge.label} className="trust-badge" role="listitem">
+                        <span className="mr-1" aria-hidden="true">{badge.icon}</span>
+                        {badge.label}
+                    </span>
+                ))}
+            </div>
+        );
+
+        const FeatureHighlights = () => (
+            <section className="mt-10">
+                <h3 className="text-white text-base font-semibold mb-3">Fiabilité immédiate</h3>
+                <div className="feature-grid">
+                    {[{
+                        icon: '⚡',
+                        title: 'Connexion instantanée',
+                        text: 'Optimisée pour les réseaux 4G/5G et Wi-Fi d’entreprise.'
+                    }, {
+                        icon: '📱',
+                        title: 'Expérience mobile',
+                        text: 'Interface pensée pour les écrans tactiles et la navigation à une main.'
+                    }, {
+                        icon: '🤝',
+                        title: 'Confiance partagée',
+                        text: 'Authentification France Travail et audits de sécurité TECHANDSTREAM.'
+                    }].map((feature) => (
+                        <article key={feature.title} className="feature-card" aria-label={feature.title}>
+                            <div className="text-2xl mb-2" aria-hidden="true">{feature.icon}</div>
+                            <p className="font-semibold mb-1">{feature.title}</p>
+                            <p className="text-sm text-white/80 leading-relaxed">{feature.text}</p>
+                        </article>
+                    ))}
+                </div>
+            </section>
+        );
+
         // Main App Component
         const App = () => {
             const [user, setUser] = useState(null);
@@ -549,67 +715,70 @@
             const showDemoCta = appConfig.demoMode;
 
             return (
-                <div className="min-h-screen flex items-center justify-center p-4">
-                    <div className="w-full max-w-2xl">
-                        {/* Header */}
-                        <header className="text-center mb-8 fade-in">
-                            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+                <main className="page-wrapper">
+                    <div className="content-shell">
+                        <header className="text-center mb-6 fade-in">
+                            <p className="inline-flex items-center justify-center px-4 py-1 rounded-full text-xs tracking-widest font-semibold text-white/80 bg-white/10 border border-white/20 mb-4 uppercase">
+                                TECHANDSTREAM · Confiance numérique
+                            </p>
+                            <h1 className="hero-title font-bold mb-3">
                                 {i18next.t('welcome')}
                             </h1>
-                            <HealthCheck />
+                            <p className="hero-subtitle max-w-2xl mx-auto text-base md:text-lg">
+                                {i18next.t('description')}
+                            </p>
+                            <div className="mt-4 flex justify-center">
+                                <HealthCheck />
+                            </div>
                         </header>
-                        
-                        {/* Main Content */}
-                        <div className="glass-effect rounded-2xl shadow-2xl p-8 fade-in">
-                            {/* Language Switcher */}
+
+                        <TrustBadges />
+
+                        <div className="glass-effect glass-panel fade-in">
                             <LanguageSwitcher />
-                            
-                            {/* Error Display */}
+
                             {error && (
-                                <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg fade-in">
+                                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 text-red-100 rounded-lg fade-in" role="alert" aria-live="assertive">
                                     <div className="flex items-center">
-                                        <span className="mr-2">⚠️</span>
+                                        <span className="mr-2" aria-hidden="true">⚠️</span>
                                         {error}
                                     </div>
                                 </div>
                             )}
-                            
-                            {/* Loading State */}
+
                             {loading ? (
-                                <div className="text-center py-8">
+                                <div className="text-center py-8" role="status" aria-live="polite">
                                     <div className="loading-spinner mx-auto mb-4"></div>
-                                    <p className="text-gray-600">{i18next.t('loading')}</p>
+                                    <p className="text-white text-opacity-70">{i18next.t('loading')}</p>
                                 </div>
                             ) : user ? (
                                 <div className="space-y-6">
-                                    {/* User Welcome */}
-                                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg fade-in">
+                                    <div className="p-4 bg-emerald-500/15 border border-emerald-300/40 rounded-xl fade-in">
                                         <div className="flex items-center space-x-3">
-                                            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                            <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
                                                 {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                                             </div>
                                             <div>
-                                                <p className="font-semibold text-green-800">
+                                                <p className="font-semibold text-white">
                                                     {i18next.t('welcome_user', { name: user.name || user.id })}
                                                 </p>
-                                                <p className="text-sm text-green-600">
+                                                <p className="text-sm text-white/70">
                                                     {user.email || 'Authentifié'}
                                                 </p>
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     {!showVideoConference ? (
                                         <div className="space-y-6">
-                                            {/* Meeting Form */}
-                                            <div className="border-t pt-6">
+                                            <div className="border-t border-white/10 pt-6">
                                                 <h2 className="text-xl font-semibold mb-4 text-white">
                                                     {i18next.t('join_meeting')}
                                                 </h2>
-                                                
+
                                                 <div className="space-y-4">
                                                     <div>
-                                                        <label htmlFor="meetingId" className="block text-sm font-medium text-white mb-2">
+                                                        <label htmlFor="meetingId" className="block text-sm font-medium text-white text-opacity-80 mb-2">
                                                             {i18next.t('meeting_id')}
                                                         </label>
                                                         <input
@@ -618,12 +787,12 @@
                                                             value={meetingId}
                                                             onChange={(e) => setMeetingId(e.target.value)}
                                                             placeholder={i18next.t('meeting_id_placeholder')}
-                                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                            className="input-field"
                                                         />
                                                     </div>
-                                                    
+
                                                     <div>
-                                                        <label htmlFor="userId" className="block text-sm font-medium text-white mb-2">
+                                                        <label htmlFor="userId" className="block text-sm font-medium text-white text-opacity-80 mb-2">
                                                             {i18next.t('user_id')}
                                                         </label>
                                                         <input
@@ -632,50 +801,48 @@
                                                             value={userId}
                                                             onChange={(e) => setUserId(e.target.value)}
                                                             placeholder={i18next.t('user_id_placeholder')}
-                                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                            className="input-field"
                                                         />
                                                     </div>
-                                                    
+
                                                     <button
                                                         onClick={handleJoinMeeting}
                                                         disabled={!meetingId.trim() || !userId.trim()}
-                                                        className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+                                                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
                                                             meetingId.trim() && userId.trim()
-                                                                ? 'bg-green-500 text-white hover:bg-green-600 hover:shadow-lg transform hover:-translate-y-0.5'
-                                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                                ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 text-white hover:shadow-lg hover:-translate-y-0.5'
+                                                                : 'bg-white/5 text-white/40 cursor-not-allowed'
                                                         }`}
                                                     >
                                                         {i18next.t('join_meeting')}
                                                     </button>
                                                 </div>
                                             </div>
-                                            
-                                            {/* Logout Button */}
+
                                             <button
                                                 onClick={handleLogout}
-                                                className="w-full py-3 px-4 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5"
+                                                className="w-full py-3 px-4 bg-red-500/80 text-white rounded-xl font-medium hover:bg-red-500 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
                                             >
                                                 {i18next.t('logout_button')}
                                             </button>
                                         </div>
                                     ) : (
-                                        /* Video Conference Placeholder */
                                         <div className="space-y-4">
-                                            <div className="flex justify-between items-center">
+                                            <div className="flex flex-wrap gap-4 items-center justify-between">
                                                 <h3 className="text-lg font-semibold text-white">
                                                     {i18next.t('meeting_id')}: {meetingId}
                                                 </h3>
                                                 <button
                                                     onClick={handleLeaveMeeting}
-                                                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                                                    className="bg-red-500/80 text-white px-4 py-2 rounded-lg hover:bg-red-500 transition-colors"
                                                 >
                                                     Quitter
                                                 </button>
                                             </div>
-                                            
+
                                             <div className="video-container h-64 flex items-center justify-center">
                                                 <div className="text-white text-center">
-                                                    <div className="text-4xl mb-2">📹</div>
+                                                    <div className="text-4xl mb-2" aria-hidden="true">📹</div>
                                                     <p>Zone de vidéoconférence</p>
                                                     <p className="text-sm text-gray-300">
                                                         Les flux vidéo ZEGOCLOUD apparaîtraient ici
@@ -686,34 +853,33 @@
                                     )}
                                 </div>
                             ) : (
-                                /* Login Section */
                                 <div className="space-y-6 text-center">
-                                    <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
-                                        <p className="text-blue-800 text-lg">
+                                    <div className="p-6 rounded-2xl border border-white/20 bg-white/5">
+                                        <p className="text-white text-lg">
                                             {i18next.t('description')}
                                         </p>
                                     </div>
-                                    
+
                                     <button
                                         onClick={handleLogin}
                                         disabled={franceTravailDisabled}
-                                        className={`w-full py-4 px-6 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-3 ${
+                                        className={`w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center space-x-3 ${
                                             franceTravailDisabled
-                                                ? 'bg-blue-300 text-blue-100 cursor-not-allowed'
-                                                : 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-lg transform hover:-translate-y-0.5'
+                                                ? 'bg-white/5 text-white/40 cursor-not-allowed'
+                                                : 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:shadow-lg hover:-translate-y-0.5'
                                         }`}
                                     >
-                                        <span className="text-2xl">🏢</span>
+                                        <span className="text-2xl" aria-hidden="true">🏢</span>
                                         <span>{i18next.t('login_button')}</span>
                                     </button>
                                     {franceTravailDisabled && (
-                                        <p className="text-sm text-yellow-100">
+                                        <p className="text-sm text-yellow-200">
                                             {i18next.t('login_unavailable')}
                                         </p>
                                     )}
 
                                     {showDemoCta && (
-                                        <div className="p-6 bg-white bg-opacity-10 border border-white/30 rounded-lg text-left space-y-3">
+                                        <div className="p-6 bg-white/5 border border-white/15 rounded-2xl text-left space-y-3">
                                             <div className="flex items-center space-x-3">
                                                 <div className="text-2xl">⚡</div>
                                                 <div>
@@ -728,10 +894,10 @@
                                             <button
                                                 onClick={handleDemoLogin}
                                                 disabled={demoLoading}
-                                                className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+                                                className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-200 ${
                                                     demoLoading
-                                                        ? 'bg-gray-300 text-gray-500 cursor-wait'
-                                                        : 'bg-emerald-500 text-white hover:bg-emerald-600 hover:shadow-lg transform hover:-translate-y-0.5'
+                                                        ? 'bg-white/10 text-white/50 cursor-wait'
+                                                        : 'bg-emerald-500 text-white hover:bg-emerald-400 hover:shadow-lg hover:-translate-y-0.5'
                                                 }`}
                                             >
                                                 {demoLoading ? i18next.t('loading') : i18next.t('demo_login_button')}
@@ -740,28 +906,29 @@
                                     )}
                                 </div>
                             )}
-                            
-                            {/* Footer */}
-                            <footer className="mt-8 pt-6 border-t border-white border-opacity-20 text-center text-sm text-white opacity-75">
-                                <div className="space-x-4 mb-4">
-                                    <a href="/terms" className="hover:text-blue-300 transition-colors">
+
+                            <FeatureHighlights />
+
+                            <footer className="mt-10 pt-6 border-t border-white/10 text-center text-sm text-white/80">
+                                <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
+                                    <a href="/terms" className="hover:text-blue-200 transition-colors">
                                         {i18next.t('terms')}
                                     </a>
-                                    <span>|</span>
-                                    <a href="/privacy" className="hover:text-blue-300 transition-colors">
+                                    <span className="text-white/40">•</span>
+                                    <a href="/privacy" className="hover:text-blue-200 transition-colors">
                                         {i18next.t('privacy')}
                                     </a>
-                                    <span>|</span>
-                                    <a href="/about" className="hover:text-blue-300 transition-colors">
+                                    <span className="text-white/40">•</span>
+                                    <a href="/about" className="hover:text-blue-200 transition-colors">
                                         {i18next.t('about')}
                                     </a>
                                 </div>
                                 <p>{i18next.t('powered_by')}</p>
-                                <p className="mt-1">{i18next.t('version')}</p>
+                                <p className="mt-1 text-white/60">{i18next.t('version')}</p>
                             </footer>
                         </div>
                     </div>
-                </div>
+                </main>
             );
         };
         
