@@ -41,6 +41,8 @@ const {
 } = require('./lib/redis');
 
 const app = express();
+const runningOnVercel = Boolean(process.env.VERCEL);
+const SPA_EXCLUDED_PREFIXES = ['/api', '/auth', '/health', '/locales'];
 
 // Optional Sentry instrumentation
 let Sentry = null;
@@ -149,9 +151,9 @@ const baseSessionOptions = {
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: isProduction,
+        secure: isProduction || runningOnVercel,
         httpOnly: true,
-        sameSite: isProduction ? 'strict' : 'lax',
+        sameSite: (isProduction || runningOnVercel) ? 'strict' : 'lax',
         maxAge: 24 * 60 * 60 * 1000
     }
 };
@@ -177,7 +179,7 @@ if (process.env.NODE_ENV === 'test') {
                 });
                 logger.info('Redis session store initialised successfully');
             } else {
-                logger.warn('Redis client unavailable, falling back to in-memory session store');
+                logger.info('Redis session store not configured; continuing with in-memory sessions');
             }
         } catch (error) {
             logger.error('Failed to configure Redis session store', { error: error.message });
@@ -424,6 +426,19 @@ app.get('/api/auth/validate', async (req, res) => {
         logger.error('Token validation failed', { error: error.message });
         res.status(500).json({ error: 'Impossible de valider le token' });
     }
+});
+
+// Serve the SPA for any non-API GET route (required for Vercel rewrites and previews)
+app.get('*', (req, res, next) => {
+    if (req.method !== 'GET') {
+        return next();
+    }
+
+    if (SPA_EXCLUDED_PREFIXES.some((prefix) => req.path.startsWith(prefix))) {
+        return next();
+    }
+
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Sentry error handler must be before any other error middleware
