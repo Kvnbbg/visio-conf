@@ -92,6 +92,7 @@ Visio-Conf ships with a production-ready [`vercel.json`](vercel.json) so the rep
 3. Keep **Root Directory** as `.` and leave the build command empty—Vercel will run the `@vercel/node` build for `server.js` and publish everything under `public/` automatically.
 4. Configure the environment variables listed in [Configuration](#-configuration) for every environment (Preview, Development, Production).
 5. Push to `main` whenever you need a production deploy. The routes in `vercel.json` already map `/api/*`, `/auth/*`, and `/health` to the Express serverless function.
+6. (Optional) Provide a `REDIS_URL` (for example from [Upstash](https://upstash.com/)) if you need shared sessions across serverless invocations—otherwise the app automatically falls back to the in-memory session store which works for demo/testing deployments.
 
 ### Deploying from the CLI
 1. Install the CLI: `npm i -g vercel`.
