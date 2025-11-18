@@ -29,6 +29,7 @@ const {
     FRANCETRAVAIL_AUTH_URL
 } = require('./lib/franceTravailAuth');
 const {
+    requireAuth,
     requestLogger,
     errorHandler,
     notFoundHandler,
@@ -427,6 +428,7 @@ app.post('/api/auth/logout', (req, res) => {
 
 // Generate ZEGOCLOUD token endpoint
 app.post('/api/generate-token',
+    requireAuth,
     validateRequest(['roomID', 'userID']),
     (req, res) => {
         const { roomID, userID } = req.body || {};
@@ -442,19 +444,8 @@ app.post('/api/generate-token',
         }
 
         const isAuthenticated = Boolean(req.session?.user);
-        if (!isAuthenticated && !isDemoMode) {
-            recordAuditEvent('zego_token_rejected', {
-                context: buildRequestContext(req),
-                metadata: { reason: 'auth_required', roomID }
-            });
-            return res.status(401).json({
-                error: 'Authentification requise',
-                code: 'AUTH_REQUIRED'
-            });
-        }
-
-        const effectiveUserId = (isAuthenticated ? req.session.user.id : null) || userID;
-        const responseUserName = (isAuthenticated ? req.session.user?.name : null) || userID;
+        const effectiveUserId = req.session.user.id || userID;
+        const responseUserName = req.session.user?.name || userID;
 
         try {
             const token = generateZegoToken(
