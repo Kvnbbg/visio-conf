@@ -32,7 +32,6 @@ const {
     errorHandler,
     notFoundHandler,
     rateLimit: createRateLimit,
-    requireAuth,
     validateRequest
 } = require('./lib/middleware');
 const {
@@ -41,7 +40,6 @@ const {
 } = require('./lib/redis');
 
 const app = express();
-const runningOnVercel = Boolean(process.env.VERCEL);
 const SPA_EXCLUDED_PREFIXES = ['/api', '/auth', '/health', '/locales'];
 
 // Optional Sentry instrumentation
@@ -146,14 +144,16 @@ app.use(cors({
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Session configuration with optional Redis support
+const sessionCookieSameSite = isProduction ? 'strict' : 'lax';
 const baseSessionOptions = {
     secret: process.env.SESSION_SECRET || 'demo_session_secret',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: isProduction || runningOnVercel,
+        // Use automatic secure cookies outside production so vercel dev (HTTP) keeps working
+        secure: isProduction ? true : 'auto',
         httpOnly: true,
-        sameSite: (isProduction || runningOnVercel) ? 'strict' : 'lax',
+        sameSite: sessionCookieSameSite,
         maxAge: 24 * 60 * 60 * 1000
     }
 };
@@ -351,7 +351,6 @@ app.post('/api/auth/logout', (req, res) => {
 
 // Generate ZEGOCLOUD token endpoint
 app.post('/api/generate-token',
-    requireAuth,
     validateRequest(['roomID', 'userID']),
     (req, res) => {
         const { roomID, userID } = req.body || {};
@@ -361,7 +360,16 @@ app.post('/api/generate-token',
             return res.status(400).json({ error: validation.error });
         }
 
-        const effectiveUserId = req.session?.user?.id || userID;
+        const isAuthenticated = Boolean(req.session?.user);
+        if (!isAuthenticated && !isDemoMode) {
+            return res.status(401).json({
+                error: 'Authentification requise',
+                code: 'AUTH_REQUIRED'
+            });
+        }
+
+        const effectiveUserId = (isAuthenticated ? req.session.user.id : null) || userID;
+        const responseUserName = (isAuthenticated ? req.session.user?.name : null) || userID;
 
         try {
             const token = generateZegoToken(
@@ -375,7 +383,7 @@ app.post('/api/generate-token',
                 token,
                 user: {
                     id: effectiveUserId,
-                    name: req.session.user.name
+                    name: responseUserName
                 }
             });
         } catch (error) {
