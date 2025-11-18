@@ -16,7 +16,7 @@ A robust, multilingual video conferencing application with France Travail OAuth 
 - **State validation** and CSRF protection
 
 ### 🌍 **Multilingual Support**
-- **4 Languages**: French, English, Spanish, Chinese
+- **2 Languages**: French, English (bilingual experience)
 - **Dynamic language switching** with persistent preferences
 - **i18next integration** for comprehensive internationalization
 - **Automatic language detection** based on browser settings
@@ -81,6 +81,25 @@ npm run dev
 ```
 
 The application will be available at `http://localhost:3001`
+
+## 🚢 Deployment (Vercel)
+
+Visio-Conf ships with a production-ready [`vercel.json`](vercel.json) so the repository root (`.`) must always be the deployment root.
+
+### Deploying from Git (dashboard)
+1. Import the GitHub repository inside Vercel.
+2. Set **Framework Preset** to **Other** (the stack is Node.js + Express with a static React UI rendered via `index.html`).
+3. Keep **Root Directory** as `.` and leave the build command empty—Vercel will run the `@vercel/node` build for `server.js` and publish everything under `public/` automatically.
+4. Configure the environment variables listed in [Configuration](#-configuration) for every environment (Preview, Development, Production).
+5. Push to `main` whenever you need a production deploy. The routes in `vercel.json` already map `/api/*`, `/auth/*`, and `/health` to the Express serverless function.
+
+### Deploying from the CLI
+1. Install the CLI: `npm i -g vercel`.
+2. Authenticate with `vercel login` and run `vercel link` from the repo root (accept `.` when prompted for the directory).
+3. Pull remote environment variables with `vercel env pull .env.local` (or create `.env` manually before running `vercel --env-file`).
+4. Trigger a preview deployment using `vercel` or go straight to production with `vercel --prod`. This command clears the “No Deployment” banner you see in the dashboard.
+
+> **Reminder:** If you restructure the project, update `vercel.json` accordingly so the server (`server.js`) and static assets remain routable.
 
 ## ⚙️ Configuration
 
@@ -148,9 +167,7 @@ visio-conf/
 ├── public/
 │   └── locales/                 # Translation files
 │       ├── en/translation.json  # English translations
-│       ├── fr/translation.json  # French translations
-│       ├── es/translation.json  # Spanish translations
-│       └── zh/translation.json  # Chinese translations
+│       └── fr/translation.json  # French translations
 ├── src/                         # React components (for build process)
 │   ├── components/
 │   │   ├── LanguageSwitcher.js  # Language selection component
@@ -245,15 +262,14 @@ The application maintains **95.76% test coverage** for core modules:
 |----------|------|--------|----------|
 | French   | `fr` | ✅ Complete | 100% |
 | English  | `en` | ✅ Complete | 100% |
-| Spanish  | `es` | ✅ Complete | 100% |
-| Chinese  | `zh` | ✅ Complete | 100% |
 
 ### Adding New Languages
 
 1. Create translation file: `public/locales/{lang}/translation.json`
-2. Add language to `LanguageSwitcher` component
-3. Update i18n configuration in `src/i18n.js`
-4. Test language switching functionality
+2. Register the locale inside `src/i18n.js`
+3. Add the locale to the React `LanguageSwitcher` component and the CDN-based language switcher inside `index.html`
+4. Provide UI copy for every key used in `index.html` and the React bundle
+5. Test language switching functionality end-to-end
 
 ### Translation Keys
 
@@ -435,7 +451,7 @@ System health check
 ## 📝 Changelog
 
 ### Version 2.0.0 (Current)
-- ✅ **Multilingual support** (French, English, Spanish, Chinese)
+- ✅ **Multilingual support** (French, English)
 - ✅ **Enhanced security** with comprehensive middleware
 - ✅ **Redis session store** for production scalability
 - ✅ **Automatic token refresh** for seamless sessions
