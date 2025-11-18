@@ -50,7 +50,7 @@
     "@prisma/client": "^6.12.0",
     "@sentry/node": "^9.35.0",
     "@sentry/tracing": "^7.120.3",
-    "axios": "^1.10.0",
+    "axios": "^1.13.2",
     "axios-retry": "^4.5.0",
     "bcrypt": "^6.0.0",
     "connect-redis": "^9.0.0",
