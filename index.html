@@ -533,7 +533,7 @@
     
     <!-- Main React Application -->
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useCallback } = React;
         
         // Error Boundary Component
         class ErrorBoundary extends React.Component {
@@ -727,6 +727,43 @@
             const [confirmPassword, setConfirmPassword] = useState('');
             const [fullName, setFullName] = useState('');
             const [isDemoCardOpen, setIsDemoCardOpen] = useState(true);
+            const telemetryEndpoint = '/api/telemetry/events';
+
+            const emitTelemetry = useCallback((eventName, details = {}) => {
+                const payload = {
+                    eventName,
+                    details: {
+                        ...details,
+                        surface: details.surface || 'landing-shell'
+                    },
+                    component: 'landing-shell',
+                    locale: i18next.language,
+                    path: window.location.pathname,
+                    source: 'spa'
+                };
+                const body = JSON.stringify(payload);
+                const nav = typeof navigator !== 'undefined' ? navigator : null;
+
+                if (nav && typeof nav.sendBeacon === 'function') {
+                    try {
+                        const blob = new Blob([body], { type: 'application/json' });
+                        if (nav.sendBeacon(telemetryEndpoint, blob)) {
+                            return;
+                        }
+                    } catch (err) {
+                        // Ignore beacon errors and fall back to fetch
+                    }
+                }
+
+                fetch(telemetryEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body,
+                    keepalive: true
+                }).catch(() => {
+                    // Telemetry should never block user interactions
+                });
+            }, []);
             
             useEffect(() => {
                 loadConfig();
@@ -778,6 +815,9 @@
 
             const handleLogin = () => {
                 resetAuthFeedback();
+                emitTelemetry('france_travail_login_click', {
+                    franceTravailConfigured: Boolean(appConfig.franceTravailEnabled)
+                });
                 window.location.href = '/auth/francetravail/login';
             };
 
@@ -788,6 +828,7 @@
 
                 setDemoLoading(true);
                 resetAuthFeedback();
+                emitTelemetry('demo_login_started', { demoMode: appConfig.demoMode });
 
                 try {
                     const response = await fetch('/api/auth/demo-login', {
@@ -802,10 +843,18 @@
 
                     setUser(data.user);
                     setUserId(data.user.id || 'demo-user');
+                    emitTelemetry('demo_login_completed', {
+                        success: true,
+                        userId: data.user.id || 'demo-user'
+                    });
                 } catch (err) {
                     console.error('Error during demo login:', err);
                     setError(i18next.t('error_demo_login'));
                     setInfoMessage('');
+                    emitTelemetry('demo_login_completed', {
+                        success: false,
+                        message: err.message
+                    });
                 } finally {
                     setDemoLoading(false);
                 }
@@ -813,15 +862,18 @@
             
             const handleLogout = async () => {
                 try {
+                    emitTelemetry('logout_initiated', { hasSession: Boolean(user) });
                     const response = await fetch('/api/auth/logout', { method: 'POST' });
+                    const data = await response.json();
 
-                    if (response.ok) {
+                    if (response.ok && data.success) {
                         setUser(null);
                         setShowVideoConference(false);
                         setMeetingId('');
                         setUserId('');
                         setError('');
                         setInfoMessage('');
+                        emitTelemetry('logout_completed', { success: true });
                     } else {
                         throw new Error('Logout failed');
                     }
@@ -829,6 +881,10 @@
                     console.error('Error during logout:', err);
                     setError(i18next.t('error_logout'));
                     setInfoMessage('');
+                    emitTelemetry('logout_completed', {
+                        success: false,
+                        message: err.message
+                    });
                 }
             };
 
@@ -846,10 +902,19 @@
                 }
 
                 setError('');
+                emitTelemetry('meeting_join_requested', {
+                    meetingId: meetingId.trim(),
+                    userId: userId.trim(),
+                    authenticated: Boolean(user)
+                });
                 setShowVideoConference(true);
             };
-            
+
             const handleLeaveMeeting = () => {
+                emitTelemetry('meeting_left', {
+                    meetingId,
+                    userId
+                });
                 setShowVideoConference(false);
             };
 
@@ -857,10 +922,14 @@
                 setAuthMode(mode);
                 setInfoMessage('');
                 setError('');
+                emitTelemetry('auth_mode_changed', { mode });
             };
 
             const handleGoogleLogin = () => {
                 resetAuthFeedback();
+                emitTelemetry('google_login_click', {
+                    franceTravailConfigured: Boolean(appConfig.franceTravailEnabled)
+                });
                 try {
                     setInfoMessage(i18next.t('google_redirect_notice'));
                     window.location.href = '/auth/google';
@@ -868,6 +937,7 @@
                     console.error('Error launching Google sign-in:', err);
                     setInfoMessage('');
                     setError(i18next.t('google_login_error'));
+                    emitTelemetry('google_login_error', { message: err.message });
                 }
             };
 
@@ -906,7 +976,11 @@
 
             const franceTravailDisabled = !appConfig.franceTravailEnabled;
             const showDemoCta = appConfig.demoMode;
-            const toggleDemoCard = () => setIsDemoCardOpen((prev) => !prev);
+            const toggleDemoCard = () => setIsDemoCardOpen((prev) => {
+                const nextState = !prev;
+                emitTelemetry('demo_card_toggled', { targetState: nextState ? 'open' : 'closed' });
+                return nextState;
+            });
             const isRegisterMode = authMode === 'register';
             const connectors = [
                 {
