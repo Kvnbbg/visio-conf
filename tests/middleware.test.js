@@ -1,27 +1,41 @@
-const { 
-    requireAuth, 
-    validateRequest, 
-    errorHandler, 
-    notFoundHandler, 
+jest.mock('../lib/logger', () => ({
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    log: jest.fn()
+}));
+
+const logger = require('../lib/logger');
+const {
+    requireAuth,
+    validateRequest,
+    errorHandler,
+    notFoundHandler,
     requestLogger,
-    rateLimit 
+    rateLimit
 } = require('../lib/middleware');
 
 describe('Middleware Module', () => {
     let req, res, next;
 
     beforeEach(() => {
+        jest.clearAllMocks();
         req = {
             session: {},
             body: {},
             path: '/test',
             method: 'GET',
-            ip: '127.0.0.1'
+            ip: '127.0.0.1',
+            originalUrl: '/test'
         };
         res = {
             status: jest.fn().mockReturnThis(),
             json: jest.fn().mockReturnThis(),
-            on: jest.fn()
+            on: jest.fn((event, handler) => {
+                if (event === 'finish') {
+                    res.finishHandler = handler;
+                }
+            })
         };
         next = jest.fn();
     });
@@ -109,28 +123,26 @@ describe('Middleware Module', () => {
     });
 
     describe('errorHandler', () => {
-        let consoleErrorSpy;
-
-        beforeEach(() => {
-            consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-        });
-
-        afterEach(() => {
-            consoleErrorSpy.mockRestore();
-        });
-
         test('should handle generic errors', () => {
             const error = new Error('Test error');
-            
+
             errorHandler(error, req, res, next);
-            
+
             expect(res.status).toHaveBeenCalledWith(500);
             expect(res.json).toHaveBeenCalledWith({
                 error: 'Erreur interne du serveur',
                 code: 'INTERNAL_ERROR',
                 stack: error.stack
             });
-            expect(consoleErrorSpy).toHaveBeenCalledWith('Error occurred:', error);
+            expect(logger.error).toHaveBeenCalledWith(
+                'Error occurred while processing request',
+                expect.objectContaining({
+                    error: 'Test error',
+                    stack: error.stack,
+                    path: '/test',
+                    method: 'GET'
+                })
+            );
         });
 
         test('should handle validation errors', () => {
@@ -208,46 +220,34 @@ describe('Middleware Module', () => {
     });
 
     describe('requestLogger', () => {
-        let consoleLogSpy;
-
-        beforeEach(() => {
-            consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-        });
-
-        afterEach(() => {
-            consoleLogSpy.mockRestore();
-        });
-
         test('should log successful requests', () => {
             res.statusCode = 200;
-            
+
             requestLogger(req, res, next);
-            
-            // Simulate response finish
-            const finishCallback = res.on.mock.calls.find(call => call[0] === 'finish')[1];
-            finishCallback();
-            
+
+            res.finishHandler();
+
             expect(next).toHaveBeenCalled();
-            expect(consoleLogSpy).toHaveBeenCalledWith(
-                expect.stringMatching(/\[.*\] GET \/test - 200 \(\d+ms\)/)
-            );
+            expect(logger.log).toHaveBeenCalledWith(expect.objectContaining({
+                level: 'info',
+                message: 'GET /test',
+                statusCode: 200,
+                ip: '127.0.0.1',
+                duration: expect.any(Number)
+            }));
         });
 
         test('should log error requests', () => {
-            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
             res.statusCode = 500;
-            
+
             requestLogger(req, res, next);
-            
-            // Simulate response finish
-            const finishCallback = res.on.mock.calls.find(call => call[0] === 'finish')[1];
-            finishCallback();
-            
-            expect(consoleErrorSpy).toHaveBeenCalledWith(
-                'Error details: GET /test - Status: 500'
-            );
-            
-            consoleErrorSpy.mockRestore();
+
+            res.finishHandler();
+
+            expect(logger.log).toHaveBeenCalledWith(expect.objectContaining({
+                level: 'error',
+                statusCode: 500
+            }));
         });
     });
 
