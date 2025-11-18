@@ -296,6 +296,7 @@
                     "google_login_button": "Continuer avec Google",
                     "google_login_error": "Impossible de démarrer la connexion Google",
                     "google_redirect_notice": "Redirection sécurisée vers Google...",
+                    "google_login_unavailable": "Connexion Google indisponible pour le moment",
                     "auth_status_title": "Intégrations disponibles",
                     "auth_status_ready": "Opérationnel",
                     "auth_status_disabled": "Configuration requise",
@@ -371,6 +372,7 @@
                     "google_login_button": "Continue with Google",
                     "google_login_error": "Unable to launch Google sign-in",
                     "google_redirect_notice": "Redirecting to Google securely...",
+                    "google_login_unavailable": "Google sign-in is not available right now",
                     "auth_status_title": "Available integrations",
                     "auth_status_ready": "Operational",
                     "auth_status_disabled": "Setup required",
@@ -601,7 +603,11 @@
             const [meetingId, setMeetingId] = useState('');
             const [userId, setUserId] = useState('');
             const [showVideoConference, setShowVideoConference] = useState(false);
-            const [appConfig, setAppConfig] = useState({ demoMode: false, franceTravailEnabled: true });
+            const [appConfig, setAppConfig] = useState({
+                demoMode: false,
+                franceTravailEnabled: true,
+                googleAuthEnabled: false
+            });
             const [demoLoading, setDemoLoading] = useState(false);
             const [authMode, setAuthMode] = useState('login');
             const [email, setEmail] = useState('');
@@ -623,7 +629,7 @@
                     const response = await fetch('/api/config');
                     if (response.ok) {
                         const data = await response.json();
-                        setAppConfig(data);
+                        setAppConfig((prev) => ({ ...prev, ...data }));
                     }
                 } catch (err) {
                     console.warn('Unable to load runtime config', err);
@@ -738,6 +744,10 @@
 
             const handleGoogleLogin = () => {
                 resetAuthFeedback();
+                if (googleAuthDisabled) {
+                    setError(i18next.t('google_login_unavailable'));
+                    return;
+                }
                 try {
                     setInfoMessage(i18next.t('google_redirect_notice'));
                     window.location.href = '/auth/google';
@@ -782,6 +792,7 @@
             };
 
             const franceTravailDisabled = !appConfig.franceTravailEnabled;
+            const googleAuthDisabled = !appConfig.googleAuthEnabled;
             const showDemoCta = appConfig.demoMode;
             const isRegisterMode = authMode === 'register';
             const connectors = [
@@ -795,7 +806,7 @@
                 {
                     key: 'google',
                     icon: '🔗',
-                    status: 'ready',
+                    status: googleAuthDisabled ? 'disabled' : 'ready',
                     label: i18next.t('auth_status_google'),
                     description: i18next.t('auth_status_google_desc')
                 },
@@ -1015,7 +1026,12 @@
 
                                         <button
                                             onClick={handleGoogleLogin}
-                                            className="w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center space-x-3 bg-white text-gray-900 hover:shadow-lg hover:-translate-y-0.5"
+                                            disabled={googleAuthDisabled}
+                                            className={`w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center space-x-3 ${
+                                                googleAuthDisabled
+                                                    ? 'bg-white/5 text-white/40 cursor-not-allowed'
+                                                    : 'bg-white text-gray-900 hover:shadow-lg hover:-translate-y-0.5'
+                                            }`}
                                             aria-label={i18next.t('google_login_button')}
                                         >
                                             <span className="text-2xl" aria-hidden="true">🔒</span>

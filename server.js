@@ -81,6 +81,7 @@ const hasFranceTravailCredentials = Boolean(
     process.env.FRANCETRAVAIL_CLIENT_ID !== 'demo_client_id'
 );
 const isDemoMode = process.env.DEMO_MODE === 'true' || (!process.env.DEMO_MODE && !hasFranceTravailCredentials);
+const isGoogleAuthEnabled = process.env.GOOGLE_OAUTH_ENABLED === 'true';
 
 if (isDemoMode) {
     logger.warn('Application démarrée en mode démonstration. Utilisez DEMO_MODE=false en production.');
@@ -214,7 +215,8 @@ app.get('/health', (req, res) => {
 app.get('/api/config', (req, res) => {
     res.json({
         demoMode: isDemoMode,
-        franceTravailEnabled: hasFranceTravailCredentials
+        franceTravailEnabled: hasFranceTravailCredentials,
+        googleAuthEnabled: isGoogleAuthEnabled
     });
 });
 
