@@ -41,7 +41,6 @@ const {
 } = require('./lib/redis');
 
 const app = express();
-const runningOnVercel = Boolean(process.env.VERCEL);
 const SPA_EXCLUDED_PREFIXES = ['/api', '/auth', '/health', '/locales'];
 
 // Optional Sentry instrumentation
@@ -146,14 +145,16 @@ app.use(cors({
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Session configuration with optional Redis support
+const sessionCookieSameSite = isProduction ? 'strict' : 'lax';
 const baseSessionOptions = {
     secret: process.env.SESSION_SECRET || 'demo_session_secret',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: isProduction || runningOnVercel,
+        // Use automatic secure cookies outside production so vercel dev (HTTP) keeps working
+        secure: isProduction ? true : 'auto',
         httpOnly: true,
-        sameSite: (isProduction || runningOnVercel) ? 'strict' : 'lax',
+        sameSite: sessionCookieSameSite,
         maxAge: 24 * 60 * 60 * 1000
     }
 };
