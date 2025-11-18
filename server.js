@@ -32,7 +32,6 @@ const {
     errorHandler,
     notFoundHandler,
     rateLimit: createRateLimit,
-    requireAuth,
     validateRequest
 } = require('./lib/middleware');
 const {
@@ -352,7 +351,6 @@ app.post('/api/auth/logout', (req, res) => {
 
 // Generate ZEGOCLOUD token endpoint
 app.post('/api/generate-token',
-    requireAuth,
     validateRequest(['roomID', 'userID']),
     (req, res) => {
         const { roomID, userID } = req.body || {};
@@ -362,7 +360,16 @@ app.post('/api/generate-token',
             return res.status(400).json({ error: validation.error });
         }
 
-        const effectiveUserId = req.session?.user?.id || userID;
+        const isAuthenticated = Boolean(req.session?.user);
+        if (!isAuthenticated && !isDemoMode) {
+            return res.status(401).json({
+                error: 'Authentification requise',
+                code: 'AUTH_REQUIRED'
+            });
+        }
+
+        const effectiveUserId = (isAuthenticated ? req.session.user.id : null) || userID;
+        const responseUserName = (isAuthenticated ? req.session.user?.name : null) || userID;
 
         try {
             const token = generateZegoToken(
@@ -376,7 +383,7 @@ app.post('/api/generate-token',
                 token,
                 user: {
                     id: effectiveUserId,
-                    name: req.session.user.name
+                    name: responseUserName
                 }
             });
         } catch (error) {
