@@ -40,6 +40,11 @@ const {
     closeRedisConnection
 } = require('./lib/redis');
 
+const TELEMETRY_MAX_REQUEST_BYTES = parseInt(process.env.TELEMETRY_MAX_REQUEST_BYTES || '20480', 10);
+const TELEMETRY_MAX_EVENTS_PER_REQUEST = parseInt(process.env.TELEMETRY_MAX_EVENTS_PER_REQUEST || '20', 10);
+const TELEMETRY_MAX_DETAIL_KEYS = parseInt(process.env.TELEMETRY_MAX_DETAIL_KEYS || '20', 10);
+const TELEMETRY_MAX_DETAIL_VALUE_LENGTH = parseInt(process.env.TELEMETRY_MAX_DETAIL_VALUE_LENGTH || '512', 10);
+
 const app = express();
 const SPA_EXCLUDED_PREFIXES = ['/api', '/auth', '/health', '/locales'];
 
@@ -88,6 +93,54 @@ if (isDemoMode) {
 }
 
 app.set('trust proxy', 1);
+
+const sanitizeTelemetryString = (value) => {
+    if (value === undefined || value === null) {
+        return null;
+    }
+
+    return String(value).slice(0, TELEMETRY_MAX_DETAIL_VALUE_LENGTH);
+};
+
+const requireAuthenticatedSession = (req, res, next) => {
+    if (req.session?.user) {
+        return next();
+    }
+
+    recordAuditEvent('auth_required', {
+        context: buildRequestContext(req),
+        metadata: { path: req.originalUrl }
+    });
+
+    return res.status(401).json({
+        error: 'Authentification requise',
+        code: 'AUTH_REQUIRED'
+    });
+};
+
+const sanitizeTelemetryDetails = (details = {}) => {
+    if (!details || typeof details !== 'object') {
+        return {};
+    }
+
+    return Object.entries(details)
+        .slice(0, TELEMETRY_MAX_DETAIL_KEYS)
+        .reduce((acc, [key, value]) => {
+            if (value === undefined || value === null) {
+                return acc;
+            }
+
+            if (typeof value === 'string') {
+                acc[key] = value.slice(0, TELEMETRY_MAX_DETAIL_VALUE_LENGTH);
+            } else if (typeof value === 'number' || typeof value === 'boolean') {
+                acc[key] = value;
+            } else {
+                acc[key] = '[truncated]';
+            }
+
+            return acc;
+        }, {});
+};
 
 // Security middleware
 if (helmet) {
@@ -427,6 +480,7 @@ app.post('/api/auth/logout', (req, res) => {
 
 // Generate ZEGOCLOUD token endpoint
 app.post('/api/generate-token',
+    requireAuthenticatedSession,
     validateRequest(['roomID', 'userID']),
     (req, res) => {
         const { roomID, userID } = req.body || {};
@@ -442,17 +496,6 @@ app.post('/api/generate-token',
         }
 
         const isAuthenticated = Boolean(req.session?.user);
-        if (!isAuthenticated && !isDemoMode) {
-            recordAuditEvent('zego_token_rejected', {
-                context: buildRequestContext(req),
-                metadata: { reason: 'auth_required', roomID }
-            });
-            return res.status(401).json({
-                error: 'Authentification requise',
-                code: 'AUTH_REQUIRED'
-            });
-        }
-
         const effectiveUserId = (isAuthenticated ? req.session.user.id : null) || userID;
         const responseUserName = (isAuthenticated ? req.session.user?.name : null) || userID;
 
@@ -562,28 +605,51 @@ app.get('/api/auth/validate', async (req, res) => {
 });
 
 // Client-side telemetry endpoint
-app.post('/api/telemetry/events', (req, res) => {
+app.post('/api/telemetry/events', requireAuthenticatedSession, (req, res) => {
     const payload = req.body;
+
     if (!payload || (Array.isArray(payload) && payload.length === 0)) {
+        recordAuditEvent('telemetry_payload_missing', {
+            actorId: req.session?.user?.id || null,
+            context: buildRequestContext(req)
+        });
         return res.status(400).json({ error: 'Payload required' });
     }
 
-    const events = Array.isArray(payload) ? payload.slice(0, 20) : [payload];
+    const estimatedBytes = Buffer.byteLength(JSON.stringify(payload));
+    if (estimatedBytes > TELEMETRY_MAX_REQUEST_BYTES) {
+        recordAuditEvent('telemetry_payload_rejected', {
+            actorId: req.session?.user?.id || null,
+            context: buildRequestContext(req),
+            metadata: { size: estimatedBytes, limit: TELEMETRY_MAX_REQUEST_BYTES }
+        });
+        return res.status(413).json({ error: 'Payload too large' });
+    }
+
+    const events = Array.isArray(payload)
+        ? payload.slice(0, TELEMETRY_MAX_EVENTS_PER_REQUEST)
+        : [payload];
+
     events.forEach((event) => {
         if (!event || typeof event !== 'object') {
             return;
         }
-        const { eventName = 'client_event', details = {}, source = 'client' } = event;
+
+        const eventName = sanitizeTelemetryString(event.eventName) || 'client_event';
+        const source = sanitizeTelemetryString(event.source) || 'client';
+        const details = sanitizeTelemetryDetails(event.details || {});
+        const metadata = {
+            ...details,
+            locale: sanitizeTelemetryString(event.locale || event.details?.locale),
+            path: sanitizeTelemetryString(event.path || event.details?.path || req.headers.referer),
+            component: sanitizeTelemetryString(event.component) || 'spa',
+            severity: sanitizeTelemetryString(event.severity) || 'info'
+        };
+
         recordAuditEvent(eventName, {
             actorId: req.session?.user?.id || null,
             context: buildRequestContext(req),
-            metadata: {
-                ...details,
-                locale: event.locale || details.locale || null,
-                path: event.path || details.path || req.headers.referer || null,
-                component: event.component || 'spa',
-                severity: event.severity || 'info'
-            },
+            metadata,
             source
         });
     });
