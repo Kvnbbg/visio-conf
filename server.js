@@ -20,6 +20,7 @@ const {
     decodeIdToken,
     validateState
 } = require('./lib/auth');
+const { buildRequestContext, recordAuditEvent } = require('./lib/auditTrail');
 const {
     exchangeCodeForToken: ftExchangeCode,
     refreshAccessToken: ftRefreshAccessToken,
@@ -32,7 +33,6 @@ const {
     errorHandler,
     notFoundHandler,
     rateLimit: createRateLimit,
-    requireAuth,
     validateRequest
 } = require('./lib/middleware');
 const {
@@ -41,7 +41,6 @@ const {
 } = require('./lib/redis');
 
 const app = express();
-const runningOnVercel = Boolean(process.env.VERCEL);
 const SPA_EXCLUDED_PREFIXES = ['/api', '/auth', '/health', '/locales'];
 
 // Optional Sentry instrumentation
@@ -146,14 +145,16 @@ app.use(cors({
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Session configuration with optional Redis support
+const sessionCookieSameSite = isProduction ? 'strict' : 'lax';
 const baseSessionOptions = {
     secret: process.env.SESSION_SECRET || 'demo_session_secret',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: isProduction || runningOnVercel,
+        // Use automatic secure cookies outside production so vercel dev (HTTP) keeps working
+        secure: isProduction ? true : 'auto',
         httpOnly: true,
-        sameSite: (isProduction || runningOnVercel) ? 'strict' : 'lax',
+        sameSite: sessionCookieSameSite,
         maxAge: 24 * 60 * 60 * 1000
     }
 };
@@ -223,18 +224,31 @@ app.get('/api/config', (req, res) => {
 // Session status endpoint
 app.get('/api/auth/status', (req, res) => {
     if (req.session && req.session.user) {
+        recordAuditEvent('auth_status_checked', {
+            actorId: req.session.user.id,
+            context: buildRequestContext(req),
+            metadata: { authenticated: true }
+        });
         return res.json({
             authenticated: true,
             user: req.session.user
         });
     }
 
+    recordAuditEvent('auth_status_checked', {
+        context: buildRequestContext(req),
+        metadata: { authenticated: false }
+    });
     return res.json({ authenticated: false });
 });
 
 // Initiate France Travail authentication
 app.get('/auth/francetravail/login', (req, res) => {
     if (!hasFranceTravailCredentials) {
+        recordAuditEvent('france_travail_login_blocked', {
+            context: buildRequestContext(req),
+            metadata: { reason: 'missing_credentials' }
+        });
         return res.status(400).json({ error: 'France Travail OAuth non configuré' });
     }
 
@@ -251,9 +265,27 @@ app.get('/auth/francetravail/login', (req, res) => {
             authUrl: franceTravailConfig.authUrl
         }, state, codeChallenge);
 
+        let redirectHost = null;
+        try {
+            redirectHost = new URL(authUrl).origin;
+        } catch (parseError) {
+            redirectHost = franceTravailConfig.authUrl;
+        }
+
+        recordAuditEvent('france_travail_login_initiated', {
+            actorId: req.session?.user?.id || null,
+            context: buildRequestContext(req),
+            metadata: { state, redirectHost }
+        });
+
         res.redirect(authUrl);
     } catch (error) {
         logger.error('Failed to initiate France Travail authentication', { error: error.message });
+        recordAuditEvent('france_travail_login_failed', {
+            actorId: req.session?.user?.id || null,
+            context: buildRequestContext(req),
+            metadata: { reason: 'init_error', message: error.message }
+        });
         res.status(500).json({ error: "Erreur lors de l'initiation de l'authentification" });
     }
 });
@@ -265,16 +297,27 @@ app.get('/auth/francetravail/callback', async (req, res) => {
 
         if (error) {
             logger.error('OAuth returned an error', { error });
+            recordAuditEvent('france_travail_callback_error', {
+                context: buildRequestContext(req),
+                metadata: { error }
+            });
             return res.redirect('/?error=oauth_error');
         }
 
         if (!validateState(state, req.session.oauthState)) {
             logger.warn('Invalid OAuth state detected');
+            recordAuditEvent('france_travail_invalid_state', {
+                context: buildRequestContext(req),
+                metadata: { stateReceived: state }
+            });
             return res.redirect('/?error=invalid_state');
         }
 
         if (!code) {
             logger.error('Missing authorization code in callback');
+            recordAuditEvent('france_travail_missing_code', {
+                context: buildRequestContext(req)
+            });
             return res.redirect('/?error=missing_code');
         }
 
@@ -307,9 +350,22 @@ app.get('/auth/francetravail/callback', async (req, res) => {
         delete req.session.codeVerifier;
         delete req.session.oauthState;
 
+        recordAuditEvent('france_travail_login_success', {
+            actorId: req.session.user.id,
+            context: buildRequestContext(req),
+            metadata: {
+                hasEmail: Boolean(req.session.user.email),
+                usedIdToken: Boolean(idToken)
+            }
+        });
+
         res.redirect('/?auth=success');
     } catch (callbackError) {
         logger.error('OAuth callback processing failed', { error: callbackError.message });
+        recordAuditEvent('france_travail_callback_failure', {
+            context: buildRequestContext(req),
+            metadata: { message: callbackError.message }
+        });
         res.redirect('/?error=callback_error');
     }
 });
@@ -319,6 +375,11 @@ app.post('/api/auth/demo-login', (req, res) => {
     if (!isDemoMode) {
         return res.status(404).json({ error: 'Route non disponible' });
     }
+
+    recordAuditEvent('demo_login_attempt', {
+        context: buildRequestContext(req),
+        metadata: { demoMode: isDemoMode }
+    });
 
     const now = Date.now();
     const demoUser = {
@@ -331,37 +392,69 @@ app.post('/api/auth/demo-login', (req, res) => {
 
     req.session.user = demoUser;
 
+    recordAuditEvent('demo_login_success', {
+        actorId: demoUser.id,
+        context: buildRequestContext(req)
+    });
+
     res.json({ success: true, user: demoUser });
 });
 
 // Logout endpoint
 app.post('/api/auth/logout', (req, res) => {
     if (!req.session) {
+        recordAuditEvent('logout_without_session', {
+            context: buildRequestContext(req)
+        });
         return res.json({ success: true });
     }
 
     req.session.destroy((error) => {
         if (error) {
             logger.error('Session destruction failed', { error: error.message });
+            recordAuditEvent('logout_failure', {
+                context: buildRequestContext(req),
+                metadata: { message: error.message }
+            });
             return res.status(500).json({ error: 'Erreur lors de la déconnexion' });
         }
+        recordAuditEvent('logout_success', {
+            context: buildRequestContext(req)
+        });
         res.json({ success: true });
     });
 });
 
 // Generate ZEGOCLOUD token endpoint
 app.post('/api/generate-token',
-    requireAuth,
     validateRequest(['roomID', 'userID']),
     (req, res) => {
         const { roomID, userID } = req.body || {};
 
         const validation = validateTokenParams(roomID, userID);
         if (!validation.isValid) {
+            recordAuditEvent('zego_token_validation_failed', {
+                actorId: req.session?.user?.id || null,
+                context: buildRequestContext(req),
+                metadata: { reason: validation.error, roomID }
+            });
             return res.status(400).json({ error: validation.error });
         }
 
-        const effectiveUserId = req.session?.user?.id || userID;
+        const isAuthenticated = Boolean(req.session?.user);
+        if (!isAuthenticated && !isDemoMode) {
+            recordAuditEvent('zego_token_rejected', {
+                context: buildRequestContext(req),
+                metadata: { reason: 'auth_required', roomID }
+            });
+            return res.status(401).json({
+                error: 'Authentification requise',
+                code: 'AUTH_REQUIRED'
+            });
+        }
+
+        const effectiveUserId = (isAuthenticated ? req.session.user.id : null) || userID;
+        const responseUserName = (isAuthenticated ? req.session.user?.name : null) || userID;
 
         try {
             const token = generateZegoToken(
@@ -375,11 +468,21 @@ app.post('/api/generate-token',
                 token,
                 user: {
                     id: effectiveUserId,
-                    name: req.session.user.name
+                    name: responseUserName
                 }
+            });
+            recordAuditEvent('zego_token_generated', {
+                actorId: req.session?.user?.id || effectiveUserId,
+                context: buildRequestContext(req),
+                metadata: { roomID, authenticated: isAuthenticated }
             });
         } catch (error) {
             logger.error('Token generation failed', { error: error.message });
+            recordAuditEvent('zego_token_generation_failed', {
+                actorId: req.session?.user?.id || null,
+                context: buildRequestContext(req),
+                metadata: { roomID, message: error.message }
+            });
             res.status(500).json({ error: 'Erreur lors de la génération du token' });
         }
     }
@@ -390,6 +493,11 @@ app.post('/api/auth/refresh', async (req, res) => {
     try {
         const refreshToken = req.session?.user?.refreshToken;
         if (!refreshToken) {
+            recordAuditEvent('token_refresh_blocked', {
+                actorId: req.session?.user?.id || null,
+                context: buildRequestContext(req),
+                metadata: { reason: 'missing_refresh_token' }
+            });
             return res.status(400).json({ error: 'Refresh token manquant' });
         }
 
@@ -405,9 +513,19 @@ app.post('/api/auth/refresh', async (req, res) => {
             refreshToken: newTokens.refresh_token || refreshToken
         };
 
+        recordAuditEvent('token_refresh_success', {
+            actorId: req.session?.user?.id || null,
+            context: buildRequestContext(req)
+        });
+
         res.json({ success: true });
     } catch (error) {
         logger.error('Token refresh failed', { error: error.message });
+        recordAuditEvent('token_refresh_failed', {
+            actorId: req.session?.user?.id || null,
+            context: buildRequestContext(req),
+            metadata: { message: error.message }
+        });
         res.status(500).json({ error: 'Impossible de rafraîchir le token' });
     }
 });
@@ -417,15 +535,60 @@ app.get('/api/auth/validate', async (req, res) => {
     try {
         const accessToken = req.session?.user?.accessToken;
         if (!accessToken) {
+            recordAuditEvent('token_validate_blocked', {
+                actorId: req.session?.user?.id || null,
+                context: buildRequestContext(req),
+                metadata: { reason: 'missing_access_token' }
+            });
             return res.status(400).json({ valid: false, error: 'Access token manquant' });
         }
 
         const isValid = await ftValidateToken(accessToken);
+        recordAuditEvent('token_validate_result', {
+            actorId: req.session?.user?.id || null,
+            context: buildRequestContext(req),
+            metadata: { valid: isValid }
+        });
         res.json({ valid: isValid });
     } catch (error) {
         logger.error('Token validation failed', { error: error.message });
+        recordAuditEvent('token_validate_failed', {
+            actorId: req.session?.user?.id || null,
+            context: buildRequestContext(req),
+            metadata: { message: error.message }
+        });
         res.status(500).json({ error: 'Impossible de valider le token' });
     }
+});
+
+// Client-side telemetry endpoint
+app.post('/api/telemetry/events', (req, res) => {
+    const payload = req.body;
+    if (!payload || (Array.isArray(payload) && payload.length === 0)) {
+        return res.status(400).json({ error: 'Payload required' });
+    }
+
+    const events = Array.isArray(payload) ? payload.slice(0, 20) : [payload];
+    events.forEach((event) => {
+        if (!event || typeof event !== 'object') {
+            return;
+        }
+        const { eventName = 'client_event', details = {}, source = 'client' } = event;
+        recordAuditEvent(eventName, {
+            actorId: req.session?.user?.id || null,
+            context: buildRequestContext(req),
+            metadata: {
+                ...details,
+                locale: event.locale || details.locale || null,
+                path: event.path || details.path || req.headers.referer || null,
+                component: event.component || 'spa',
+                severity: event.severity || 'info'
+            },
+            source
+        });
+    });
+
+    res.json({ success: true });
 });
 
 // Serve the SPA for any non-API GET route (required for Vercel rewrites and previews)

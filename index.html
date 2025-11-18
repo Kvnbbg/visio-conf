@@ -205,6 +205,110 @@
             color: var(--text-strong);
         }
 
+        .demo-card {
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.08));
+            overflow: hidden;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+        }
+
+        .demo-card:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.45);
+            transform: translateY(-2px);
+        }
+
+        .demo-card.open {
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 25px 65px rgba(5, 150, 105, 0.35);
+        }
+
+        .demo-card-header {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+        }
+
+        .demo-card-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-strong);
+            transition: color 0.3s ease;
+            text-align: left;
+        }
+
+        .demo-card-header:hover .demo-card-title {
+            color: var(--accent);
+        }
+
+        .demo-card-toggle {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .demo-card:hover .demo-card-toggle {
+            background: rgba(34, 211, 238, 0.3);
+        }
+
+        .demo-card.open .demo-card-toggle {
+            transform: rotate(180deg);
+        }
+
+        .demo-card-content {
+            padding: 0 1.5rem;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease;
+        }
+
+        .demo-card.open .demo-card-content {
+            max-height: 480px;
+            opacity: 1;
+            padding-bottom: 1.5rem;
+            padding-top: 0.5rem;
+        }
+
+        .demo-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border-radius: 9999px;
+            padding: 0.35rem 0.9rem;
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--text-strong);
+            font-size: 0.85rem;
+        }
+
+        .demo-feature-list {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .demo-feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            color: rgba(248, 250, 252, 0.85);
+            font-size: 0.9rem;
+        }
+
         @media (max-width: 640px) {
             .glass-panel {
                 padding: 1.5rem;
@@ -291,6 +395,13 @@
                     "demo_login_description": "Lancez instantanément Visio-Conf sans comptes externes pour tester l'interface.",
                     "demo_login_button": "Démarrer une session démo",
                     "error_demo_login": "Impossible de démarrer la session démo",
+                    "demo_login_pill_speed": "Prêt en 1 clic",
+                    "demo_login_pill_safe": "Données fictives",
+                    "demo_login_pill_motion": "Animations modernes",
+                    "demo_login_feature_transitions": "Animations d'ouverture/fermeture fidèles au parcours réel.",
+                    "demo_login_feature_tokens": "Jetons simulés pour rejoindre une réunion sans secrets sensibles.",
+                    "demo_login_feature_accessibility": "Hover et focus modernisés pour tester l'accessibilité.",
+                    "demo_login_disclaimer": "Aucune donnée réelle n'est modifiée : ce mode démontre uniquement l'interface.",
                     "about": "À propos de Visio-Conf",
                     "version": "Version 2.0.0",
                     "google_login_button": "Continuer avec Google",
@@ -366,6 +477,13 @@
                     "demo_login_description": "Launch Visio-Conf locally without external accounts to explore the UX.",
                     "demo_login_button": "Start demo session",
                     "error_demo_login": "Unable to start the demo session",
+                    "demo_login_pill_speed": "Ready in one click",
+                    "demo_login_pill_safe": "Sandbox data only",
+                    "demo_login_pill_motion": "Modern motion",
+                    "demo_login_feature_transitions": "Open/close animations mirror the production journey.",
+                    "demo_login_feature_tokens": "Simulated tokens let you join rooms without secrets.",
+                    "demo_login_feature_accessibility": "Modern hover & focus states keep accessibility in check.",
+                    "demo_login_disclaimer": "No real data is modified — this mode only demonstrates the interface.",
                     "about": "About Visio-Conf",
                     "version": "Version 2.0.0",
                     "google_login_button": "Continue with Google",
@@ -415,7 +533,7 @@
     
     <!-- Main React Application -->
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useCallback } = React;
         
         // Error Boundary Component
         class ErrorBoundary extends React.Component {
@@ -608,6 +726,44 @@
             const [password, setPassword] = useState('');
             const [confirmPassword, setConfirmPassword] = useState('');
             const [fullName, setFullName] = useState('');
+            const [isDemoCardOpen, setIsDemoCardOpen] = useState(true);
+            const telemetryEndpoint = '/api/telemetry/events';
+
+            const emitTelemetry = useCallback((eventName, details = {}) => {
+                const payload = {
+                    eventName,
+                    details: {
+                        ...details,
+                        surface: details.surface || 'landing-shell'
+                    },
+                    component: 'landing-shell',
+                    locale: i18next.language,
+                    path: window.location.pathname,
+                    source: 'spa'
+                };
+                const body = JSON.stringify(payload);
+                const nav = typeof navigator !== 'undefined' ? navigator : null;
+
+                if (nav && typeof nav.sendBeacon === 'function') {
+                    try {
+                        const blob = new Blob([body], { type: 'application/json' });
+                        if (nav.sendBeacon(telemetryEndpoint, blob)) {
+                            return;
+                        }
+                    } catch (err) {
+                        // Ignore beacon errors and fall back to fetch
+                    }
+                }
+
+                fetch(telemetryEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body,
+                    keepalive: true
+                }).catch(() => {
+                    // Telemetry should never block user interactions
+                });
+            }, []);
             
             useEffect(() => {
                 loadConfig();
@@ -617,6 +773,10 @@
                     document.getElementById('loading-screen').style.display = 'none';
                 }, 1000);
             }, []);
+
+            useEffect(() => {
+                setIsDemoCardOpen(appConfig.demoMode);
+            }, [appConfig.demoMode]);
 
             const loadConfig = async () => {
                 try {
@@ -655,6 +815,9 @@
 
             const handleLogin = () => {
                 resetAuthFeedback();
+                emitTelemetry('france_travail_login_click', {
+                    franceTravailConfigured: Boolean(appConfig.franceTravailEnabled)
+                });
                 window.location.href = '/auth/francetravail/login';
             };
 
@@ -665,6 +828,7 @@
 
                 setDemoLoading(true);
                 resetAuthFeedback();
+                emitTelemetry('demo_login_started', { demoMode: appConfig.demoMode });
 
                 try {
                     const response = await fetch('/api/auth/demo-login', {
@@ -679,10 +843,18 @@
 
                     setUser(data.user);
                     setUserId(data.user.id || 'demo-user');
+                    emitTelemetry('demo_login_completed', {
+                        success: true,
+                        userId: data.user.id || 'demo-user'
+                    });
                 } catch (err) {
                     console.error('Error during demo login:', err);
                     setError(i18next.t('error_demo_login'));
                     setInfoMessage('');
+                    emitTelemetry('demo_login_completed', {
+                        success: false,
+                        message: err.message
+                    });
                 } finally {
                     setDemoLoading(false);
                 }
@@ -690,15 +862,18 @@
             
             const handleLogout = async () => {
                 try {
+                    emitTelemetry('logout_initiated', { hasSession: Boolean(user) });
                     const response = await fetch('/api/auth/logout', { method: 'POST' });
+                    const data = await response.json();
 
-                    if (response.ok) {
+                    if (response.ok && data.success) {
                         setUser(null);
                         setShowVideoConference(false);
                         setMeetingId('');
                         setUserId('');
                         setError('');
                         setInfoMessage('');
+                        emitTelemetry('logout_completed', { success: true });
                     } else {
                         throw new Error('Logout failed');
                     }
@@ -706,6 +881,10 @@
                     console.error('Error during logout:', err);
                     setError(i18next.t('error_logout'));
                     setInfoMessage('');
+                    emitTelemetry('logout_completed', {
+                        success: false,
+                        message: err.message
+                    });
                 }
             };
 
@@ -723,10 +902,19 @@
                 }
 
                 setError('');
+                emitTelemetry('meeting_join_requested', {
+                    meetingId: meetingId.trim(),
+                    userId: userId.trim(),
+                    authenticated: Boolean(user)
+                });
                 setShowVideoConference(true);
             };
-            
+
             const handleLeaveMeeting = () => {
+                emitTelemetry('meeting_left', {
+                    meetingId,
+                    userId
+                });
                 setShowVideoConference(false);
             };
 
@@ -734,10 +922,14 @@
                 setAuthMode(mode);
                 setInfoMessage('');
                 setError('');
+                emitTelemetry('auth_mode_changed', { mode });
             };
 
             const handleGoogleLogin = () => {
                 resetAuthFeedback();
+                emitTelemetry('google_login_click', {
+                    franceTravailConfigured: Boolean(appConfig.franceTravailEnabled)
+                });
                 try {
                     setInfoMessage(i18next.t('google_redirect_notice'));
                     window.location.href = '/auth/google';
@@ -745,6 +937,7 @@
                     console.error('Error launching Google sign-in:', err);
                     setInfoMessage('');
                     setError(i18next.t('google_login_error'));
+                    emitTelemetry('google_login_error', { message: err.message });
                 }
             };
 
@@ -783,6 +976,11 @@
 
             const franceTravailDisabled = !appConfig.franceTravailEnabled;
             const showDemoCta = appConfig.demoMode;
+            const toggleDemoCard = () => setIsDemoCardOpen((prev) => {
+                const nextState = !prev;
+                emitTelemetry('demo_card_toggled', { targetState: nextState ? 'open' : 'closed' });
+                return nextState;
+            });
             const isRegisterMode = authMode === 'register';
             const connectors = [
                 {
@@ -1138,29 +1336,80 @@
                                     </div>
 
                                     {showDemoCta && (
-                                        <div className="p-6 bg-white/5 border border-white/15 rounded-2xl text-left space-y-3">
-                                            <div className="flex items-center space-x-3">
-                                                <div className="text-2xl">⚡</div>
-                                                <div>
-                                                    <p className="text-white font-semibold">
-                                                        {i18next.t('demo_login_title')}
-                                                    </p>
-                                                    <p className="text-white text-opacity-80 text-sm">
-                                                        {i18next.t('demo_login_description')}
-                                                    </p>
-                                                </div>
-                                            </div>
+                                        <div className={`demo-card ${isDemoCardOpen ? 'open' : ''}`} data-state={isDemoCardOpen ? 'open' : 'closed'}>
                                             <button
-                                                onClick={handleDemoLogin}
-                                                disabled={demoLoading}
-                                                className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-200 ${
-                                                    demoLoading
-                                                        ? 'bg-white/10 text-white/50 cursor-wait'
-                                                        : 'bg-emerald-500 text-white hover:bg-emerald-400 hover:shadow-lg hover:-translate-y-0.5'
-                                                }`}
+                                                type="button"
+                                                onClick={toggleDemoCard}
+                                                className="demo-card-header focus-visible"
+                                                aria-expanded={isDemoCardOpen}
+                                                aria-controls="demo-session-panel"
                                             >
-                                                {demoLoading ? i18next.t('loading') : i18next.t('demo_login_button')}
+                                                <div className="demo-card-title">
+                                                    <span className="text-3xl" aria-hidden="true">⚡</span>
+                                                    <div>
+                                                        <p>{i18next.t('demo_login_title')}</p>
+                                                        <p className="text-white text-opacity-80 text-sm hidden sm:block">
+                                                            {i18next.t('demo_login_description')}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="demo-card-toggle" aria-hidden="true">
+                                                    <svg className="w-4 h-4 text-white/80" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M5 8l5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                </div>
                                             </button>
+                                            <div
+                                                id="demo-session-panel"
+                                                className="demo-card-content"
+                                                aria-hidden={!isDemoCardOpen}
+                                            >
+                                                <p className="text-white text-opacity-80 text-sm mb-4 sm:hidden">
+                                                    {i18next.t('demo_login_description')}
+                                                </p>
+                                                <div className="flex flex-wrap gap-2 mb-4">
+                                                    <span className="demo-pill">
+                                                        <span aria-hidden="true">🚀</span>
+                                                        {i18next.t('demo_login_pill_speed')}
+                                                    </span>
+                                                    <span className="demo-pill">
+                                                        <span aria-hidden="true">🛡️</span>
+                                                        {i18next.t('demo_login_pill_safe')}
+                                                    </span>
+                                                    <span className="demo-pill">
+                                                        <span aria-hidden="true">🎨</span>
+                                                        {i18next.t('demo_login_pill_motion')}
+                                                    </span>
+                                                </div>
+                                                <div className="demo-feature-list mb-5">
+                                                    <div className="demo-feature-item">
+                                                        <span className="text-lg" aria-hidden="true">🪄</span>
+                                                        <p>{i18next.t('demo_login_feature_transitions')}</p>
+                                                    </div>
+                                                    <div className="demo-feature-item">
+                                                        <span className="text-lg" aria-hidden="true">🛰️</span>
+                                                        <p>{i18next.t('demo_login_feature_tokens')}</p>
+                                                    </div>
+                                                    <div className="demo-feature-item">
+                                                        <span className="text-lg" aria-hidden="true">🤝</span>
+                                                        <p>{i18next.t('demo_login_feature_accessibility')}</p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={handleDemoLogin}
+                                                    disabled={demoLoading}
+                                                    className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                                                        demoLoading
+                                                            ? ' bg-white/10 text-white/50 cursor-wait'
+                                                            : ' bg-gradient-to-r from-emerald-400 via-sky-400 to-blue-500 text-white shadow-lg hover:shadow-2xl hover:-translate-y-0.5'
+                                                    }`}
+                                                >
+                                                    {demoLoading ? i18next.t('loading') : i18next.t('demo_login_button')}
+                                                </button>
+                                                <p className="text-xs text-white/60 mt-3">
+                                                    {i18next.t('demo_login_disclaimer')}
+                                                </p>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
