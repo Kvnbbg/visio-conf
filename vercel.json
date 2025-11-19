@@ -54,11 +54,6 @@
     "RATE_LIMIT_MAX": "100",
     "RATE_LIMIT_WINDOW_MS": "900000"
   },
-  "functions": {
-    "server.js": {
-      "maxDuration": 30
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",
