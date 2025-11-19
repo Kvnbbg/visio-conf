@@ -65,6 +65,7 @@ if (process.env.SENTRY_DSN) {
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const INDEX_HTML_PATH = path.join(__dirname, 'public', 'index.html');
 
 // Initialize Redis client
 let redisClient = null;
@@ -380,7 +381,7 @@ app.put('/api/protected/profile',
 
 // Serve main application
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(INDEX_HTML_PATH);
 });
 
 // Security error handler
