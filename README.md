@@ -39,6 +39,7 @@ A robust, multilingual video conferencing application with France Travail OAuth 
 - **Real-time communication** with WebRTC
 - **Meeting room management** with secure token generation
 - **Participant controls** (camera, microphone, screen sharing)
+- **Automatic client fallback** to the free ZEGOCLOUD prebuilt kit whenever token APIs fail, so users never get stranded
 
 ## 🚀 Quick Start
 
@@ -88,10 +89,10 @@ Visio-Conf ships with a production-ready [`vercel.json`](vercel.json) so the rep
 
 ### Deploying from Git (dashboard)
 1. Import the GitHub repository inside Vercel.
-2. Set **Framework Preset** to **Other** (the stack is Node.js + Express with a static React UI rendered via `index.html`).
-3. Keep **Root Directory** as `.` and leave the build command empty—Vercel will run the `@vercel/node` build for `server.js` and publish everything under `public/` automatically.
+2. Set **Framework Preset** to **Node.js** (the stack is Node.js + Express with a static React UI rendered via `public/index.html`).
+3. Keep **Root Directory** as `.` and leave the build command empty—Vercel will run the `@vercel/node` build for `server.js` and publish everything under `public/` automatically. Confirm that the **Start Command** stays `npm start` so the platform executes `node server.js`.
 4. Configure the environment variables listed in [Configuration](#-configuration) for every environment (Preview, Development, Production).
-5. Push to `main` whenever you need a production deploy. The routes in `vercel.json` already map `/api/*`, `/auth/*`, and `/health` to the Express serverless function.
+5. Push to `main` whenever you need a production deploy. The routes in `vercel.json` send `/static/*` assets straight from `public/` and forward every other request to the Express serverless function so React client-side routing keeps working.
 6. (Optional) Provide a `REDIS_URL` (for example from [Upstash](https://upstash.com/)) if you need shared sessions across serverless invocations—otherwise the app automatically falls back to the in-memory session store which works for demo/testing deployments.
 
 ### Deploying from the CLI
@@ -118,6 +119,8 @@ DEMO_MODE=true # Disable in production once OAuth is configured
 # ZEGOCLOUD Configuration
 ZEGOCLOUD_APP_ID=your_zegocloud_app_id
 ZEGOCLOUD_SERVER_SECRET=your_zegocloud_server_secret
+ALLOW_ZEGO_CLIENT_FALLBACK=true
+ZEGOCLOUD_DEFAULT_MODE=fallback
 
 # France Travail OAuth Configuration
 FRANCETRAVAIL_CLIENT_ID=your_france_travail_client_id
@@ -131,6 +134,16 @@ REDIS_URL=redis://localhost:6379
 SENTRY_DSN=your_sentry_dsn
 LOG_LEVEL=info
 ```
+
+### Secrets overlay (`.secrets`)
+
+When you deploy to platforms such as Vercel you might not want to expose sensitive IDs inside `.env`. The server now loads an optional JSON file named [`.secrets`](.secrets.example) located at the repository root. Copy the template to get started:
+
+```bash
+cp .secrets.example .secrets
+```
+
+Every key from the JSON file is merged on top of environment variables, so you can safely store values like `ZEGOCLOUD_APP_ID`, `ZEGOCLOUD_SERVER_SECRET`, `ALLOW_ZEGO_CLIENT_FALLBACK`, or `ZEGOCLOUD_DEFAULT_MODE` without checking them into Git (the `.secrets` file is ignored by default). The `/api/config/client` endpoint exposes only the safe subset (App ID, default mode, feature flags) that the React UI needs to decide when to fall back to the browser-only meeting experience.
 
 #### Demo Mode Controls
 
@@ -188,7 +201,7 @@ visio-conf/
 │   ├── logger.test.js          # Logging tests
 │   └── redis.test.js           # Redis client tests
 ├── server.js                   # Enhanced Express server
-├── index.html                  # Main HTML with React integration
+├── public/index.html           # Main HTML with React integration
 ├── package.json               # Dependencies and scripts
 ├── vercel.json               # Vercel deployment configuration
 └── README.md                 # This documentation
@@ -198,6 +211,11 @@ visio-conf/
 
 - **Backend**: Node.js, Express.js
 - **Frontend**: React (CDN), Tailwind CSS
+- **Video SDKs**: ZEGOCLOUD Express Engine + ZEGOCLOUD UIKit Prebuilt fallback
+
+## 🆓 Free & Freemium Cloud Alternatives
+
+If you want to stay within the zero-cost envelope, start with the default ZEGOCLOUD client fallback (pre-configured App ID `234470600`). When you are ready to branch out, the curated list in [`docs/free-alternatives.md`](docs/free-alternatives.md) highlights free-tier communication services (pCloud, Internxt, Icedrive) and zero-trust access stacks (Pomerium, Twingate, Cyolo, zrok) that pair nicely with Visio-Conf.
 - **Authentication**: OAuth 2.0 + PKCE
 - **Video**: ZEGOCLOUD WebRTC SDK
 - **Internationalization**: i18next
@@ -268,8 +286,8 @@ The application maintains **95.76% test coverage** for core modules:
 
 1. Create translation file: `public/locales/{lang}/translation.json`
 2. Register the locale inside `src/i18n.js`
-3. Add the locale to the React `LanguageSwitcher` component and the CDN-based language switcher inside `index.html`
-4. Provide UI copy for every key used in `index.html` and the React bundle
+3. Add the locale to the React `LanguageSwitcher` component and the CDN-based language switcher inside `public/index.html`
+4. Provide UI copy for every key used in `public/index.html` and the React bundle
 5. Test language switching functionality end-to-end
 
 ### Translation Keys

@@ -6,6 +6,32 @@ import VideoConference from './components/VideoConference';
 import HealthCheck from './components/HealthCheck';
 import './i18n'; // Initialize i18n
 
+const DEFAULT_ZEGO_CONFIG = {
+    appId: 234470600,
+    serverSecret: 'db9a379cd5f3c8a4268f61a00cdd8600',
+    allowClientFallback: true,
+    defaultMode: 'fallback',
+    options: {
+        turnOnMicrophoneWhenJoining: true,
+        turnOnCameraWhenJoining: true,
+        showMyCameraToggleButton: true,
+        showMyMicrophoneToggleButton: true,
+        showAudioVideoSettingsButton: true,
+        showScreenSharingButton: true,
+        showTextChat: true,
+        showUserList: true,
+        maxUsers: 50,
+        layout: 'Auto',
+        showLayoutButton: true,
+        scenario: {
+            mode: 'VideoConference',
+            config: {
+                role: 'Host'
+            }
+        }
+    }
+};
+
 const App = () => {
     const { t } = useTranslation();
     const [user, setUser] = useState(null);
@@ -14,9 +40,38 @@ const App = () => {
     const [meetingId, setMeetingId] = useState('');
     const [userId, setUserId] = useState('');
     const [showVideoConference, setShowVideoConference] = useState(false);
+    const [clientConfig, setClientConfig] = useState({ zego: DEFAULT_ZEGO_CONFIG });
 
     useEffect(() => {
         checkAuthStatus();
+    }, []);
+
+    useEffect(() => {
+        const fetchClientConfig = async () => {
+            try {
+                const response = await fetch('/api/config/client');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch client config');
+                }
+                const data = await response.json();
+                setClientConfig((previous) => ({
+                    ...previous,
+                    ...data,
+                    zego: {
+                        ...previous.zego,
+                        ...(data.zego || {}),
+                        options: {
+                            ...previous.zego.options,
+                            ...(data.zego?.options || {})
+                        }
+                    }
+                }));
+            } catch (configError) {
+                console.warn('Unable to load client config, falling back to defaults', configError);
+            }
+        };
+
+        fetchClientConfig();
     }, []);
 
     const checkAuthStatus = async () => {
@@ -211,6 +266,7 @@ const App = () => {
                                 meetingId={meetingId}
                                 user={{ ...user, id: userId }}
                                 onLeave={handleLeaveMeeting}
+                                fallbackZegoConfig={clientConfig.zego}
                             />
                         )}
 

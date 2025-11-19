@@ -39,5 +39,13 @@
     "settings": "Settings",
     "about": "About Visio-Conf",
     "version": "Version 2.0.0",
-    "powered_by": "Powered by ZEGOCLOUD and France Travail"
+    "powered_by": "Powered by ZEGOCLOUD and France Travail",
+    "connection_mode_label": "Connection mode",
+    "connection_mode_api": "Secure API (server-managed)",
+    "connection_mode_fallback": "Built-in ZEGOCLOUD (client)",
+    "connection_mode_fallback_hint": "Runs entirely in the browser with the ZEGOCLOUD prebuilt UI kit.",
+    "fallback_not_available": "Client fallback is unavailable because the credentials are missing.",
+    "fallback_auto_enabled": "API token generation failed. We automatically switched to the built-in ZEGOCLOUD experience.",
+    "fallback_active_banner": "Using the built-in ZEGOCLOUD kit – audio, video, chat, and layout controls are handled locally.",
+    "fallback_missing_sdk": "Unable to load the ZEGOCLOUD kit. Please refresh or check your network connection."
 }
