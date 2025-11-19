@@ -88,10 +88,10 @@ Visio-Conf ships with a production-ready [`vercel.json`](vercel.json) so the rep
 
 ### Deploying from Git (dashboard)
 1. Import the GitHub repository inside Vercel.
-2. Set **Framework Preset** to **Other** (the stack is Node.js + Express with a static React UI rendered via `public/index.html`).
-3. Keep **Root Directory** as `.` and leave the build command empty—Vercel will run the `@vercel/node` build for `server.js` and publish everything under `public/` automatically.
+2. Set **Framework Preset** to **Node.js** (the stack is Node.js + Express with a static React UI rendered via `public/index.html`).
+3. Keep **Root Directory** as `.` and leave the build command empty—Vercel will run the `@vercel/node` build for `server.js` and publish everything under `public/` automatically. Confirm that the **Start Command** stays `npm start` so the platform executes `node server.js`.
 4. Configure the environment variables listed in [Configuration](#-configuration) for every environment (Preview, Development, Production).
-5. Push to `main` whenever you need a production deploy. The routes in `vercel.json` already map `/api/*`, `/auth/*`, and `/health` to the Express serverless function.
+5. Push to `main` whenever you need a production deploy. The routes in `vercel.json` send `/static/*` assets straight from `public/` and forward every other request to the Express serverless function so React client-side routing keeps working.
 6. (Optional) Provide a `REDIS_URL` (for example from [Upstash](https://upstash.com/)) if you need shared sessions across serverless invocations—otherwise the app automatically falls back to the in-memory session store which works for demo/testing deployments.
 
 ### Deploying from the CLI
