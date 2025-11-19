@@ -17,7 +17,13 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/server.js"
+      "dest": "/server.js",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block"
+      }
     },
     {
       "src": "/auth/(.*)",
@@ -28,12 +34,28 @@
       "dest": "/server.js"
     },
     {
+      "src": "/health-check",
+      "dest": "/api/health"
+    },
+    {
       "src": "/locales/(.*)",
-      "dest": "/public/locales/$1"
+      "dest": "/public/locales/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=3600",
+        "Access-Control-Allow-Origin": "*"
+      }
     },
     {
       "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-      "dest": "/public/$1"
+      "dest": "/public/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/login",
+      "status": 302,
+      "dest": "/auth/francetravail/login"
     },
     {
       "src": "/(.*)",
@@ -53,63 +75,5 @@
     "LOG_LEVEL": "info",
     "RATE_LIMIT_MAX": "100",
     "RATE_LIMIT_WINDOW_MS": "900000"
-  },
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
-    },
-    {
-      "source": "/locales/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=3600"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        }
-      ]
-    },
-    {
-      "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    }
-  ],
-  "redirects": [
-    {
-      "source": "/login",
-      "destination": "/auth/francetravail/login",
-      "permanent": false
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/health-check",
-      "destination": "/api/health"
-    }
-  ]
+  }
 }
