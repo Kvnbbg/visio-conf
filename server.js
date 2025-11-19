@@ -41,6 +41,7 @@ const {
 
 const app = express();
 const SPA_EXCLUDED_PREFIXES = ['/api', '/auth', '/health', '/locales'];
+const INDEX_HTML_PATH = path.join(__dirname, 'public', 'index.html');
 
 // Optional Sentry instrumentation
 let Sentry = null;
@@ -200,7 +201,7 @@ const franceTravailConfig = {
 
 // Home route
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(INDEX_HTML_PATH);
 });
 
 // Health check endpoint
@@ -446,7 +447,7 @@ app.get('*', (req, res, next) => {
         return next();
     }
 
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(INDEX_HTML_PATH);
 });
 
 // Sentry error handler must be before any other error middleware
