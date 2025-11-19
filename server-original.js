@@ -24,6 +24,7 @@ const {
 } = require('./lib/middleware');
 
 const app = express();
+const INDEX_HTML_PATH = path.join(__dirname, 'public', 'index.html');
 
 // Configuration CORS
 app.use(cors({
@@ -74,7 +75,7 @@ const franceTravailConfig = {
 
 // Route pour servir la page d'accueil
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(INDEX_HTML_PATH);
 });
 
 // Health check endpoint
