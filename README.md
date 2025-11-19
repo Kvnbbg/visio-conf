@@ -39,6 +39,7 @@ A robust, multilingual video conferencing application with France Travail OAuth 
 - **Real-time communication** with WebRTC
 - **Meeting room management** with secure token generation
 - **Participant controls** (camera, microphone, screen sharing)
+- **Automatic client fallback** to the free ZEGOCLOUD prebuilt kit whenever token APIs fail, so users never get stranded
 
 ## 🚀 Quick Start
 
@@ -118,6 +119,8 @@ DEMO_MODE=true # Disable in production once OAuth is configured
 # ZEGOCLOUD Configuration
 ZEGOCLOUD_APP_ID=your_zegocloud_app_id
 ZEGOCLOUD_SERVER_SECRET=your_zegocloud_server_secret
+ALLOW_ZEGO_CLIENT_FALLBACK=true
+ZEGOCLOUD_DEFAULT_MODE=fallback
 
 # France Travail OAuth Configuration
 FRANCETRAVAIL_CLIENT_ID=your_france_travail_client_id
@@ -131,6 +134,16 @@ REDIS_URL=redis://localhost:6379
 SENTRY_DSN=your_sentry_dsn
 LOG_LEVEL=info
 ```
+
+### Secrets overlay (`.secrets`)
+
+When you deploy to platforms such as Vercel you might not want to expose sensitive IDs inside `.env`. The server now loads an optional JSON file named [`.secrets`](.secrets.example) located at the repository root. Copy the template to get started:
+
+```bash
+cp .secrets.example .secrets
+```
+
+Every key from the JSON file is merged on top of environment variables, so you can safely store values like `ZEGOCLOUD_APP_ID`, `ZEGOCLOUD_SERVER_SECRET`, `ALLOW_ZEGO_CLIENT_FALLBACK`, or `ZEGOCLOUD_DEFAULT_MODE` without checking them into Git (the `.secrets` file is ignored by default). The `/api/config/client` endpoint exposes only the safe subset (App ID, default mode, feature flags) that the React UI needs to decide when to fall back to the browser-only meeting experience.
 
 #### Demo Mode Controls
 
@@ -198,6 +211,11 @@ visio-conf/
 
 - **Backend**: Node.js, Express.js
 - **Frontend**: React (CDN), Tailwind CSS
+- **Video SDKs**: ZEGOCLOUD Express Engine + ZEGOCLOUD UIKit Prebuilt fallback
+
+## 🆓 Free & Freemium Cloud Alternatives
+
+If you want to stay within the zero-cost envelope, start with the default ZEGOCLOUD client fallback (pre-configured App ID `234470600`). When you are ready to branch out, the curated list in [`docs/free-alternatives.md`](docs/free-alternatives.md) highlights free-tier communication services (pCloud, Internxt, Icedrive) and zero-trust access stacks (Pomerium, Twingate, Cyolo, zrok) that pair nicely with Visio-Conf.
 - **Authentication**: OAuth 2.0 + PKCE
 - **Video**: ZEGOCLOUD WebRTC SDK
 - **Internationalization**: i18next

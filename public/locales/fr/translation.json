@@ -39,5 +39,13 @@
     "settings": "Paramètres",
     "about": "À propos de Visio-Conf",
     "version": "Version 2.0.0",
-    "powered_by": "Propulsé par ZEGOCLOUD et France Travail"
+    "powered_by": "Propulsé par ZEGOCLOUD et France Travail",
+    "connection_mode_label": "Mode de connexion",
+    "connection_mode_api": "API sécurisée (gérée par le serveur)",
+    "connection_mode_fallback": "ZEGOCLOUD intégré (côté client)",
+    "connection_mode_fallback_hint": "Fonctionne entièrement dans le navigateur avec le kit d'interface ZEGOCLOUD.",
+    "fallback_not_available": "Le mode de secours côté client est indisponible car les identifiants manquent.",
+    "fallback_auto_enabled": "La génération du jeton API a échoué. Nous sommes passés automatiquement à l'expérience ZEGOCLOUD intégrée.",
+    "fallback_active_banner": "Vous utilisez le kit ZEGOCLOUD intégré : audio, vidéo, chat et disposition sont gérés localement.",
+    "fallback_missing_sdk": "Impossible de charger le kit ZEGOCLOUD. Actualisez la page ou vérifiez votre connexion."
 }

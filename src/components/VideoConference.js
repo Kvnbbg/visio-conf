@@ -1,38 +1,112 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const VideoConference = ({ meetingId, user, onLeave }) => {
+const DEFAULT_SCENARIO_MODE = 'VideoConference';
+
+const VideoConference = ({ meetingId, user, onLeave, fallbackZegoConfig }) => {
     const { t } = useTranslation();
+    const safeFallbackConfig = fallbackZegoConfig || { options: {} };
     const zegoRef = useRef(null);
+    const fallbackContainerRef = useRef(null);
     const [isJoined, setIsJoined] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [participants, setParticipants] = useState([]);
     const [isCameraOn, setIsCameraOn] = useState(true);
     const [isMicOn, setIsMicOn] = useState(true);
+    const [connectionMode, setConnectionMode] = useState(() => safeFallbackConfig?.defaultMode || 'api');
+    const [autoFallbackUsed, setAutoFallbackUsed] = useState(false);
+
+    const supportsFallback = Boolean(
+        safeFallbackConfig?.allowClientFallback &&
+        safeFallbackConfig?.appId &&
+        safeFallbackConfig?.serverSecret
+    );
+
+    useEffect(() => () => {
+        if (zegoRef.current?.destroy) {
+            zegoRef.current.destroy();
+        }
+    }, []);
 
     useEffect(() => {
-        // Initialize ZEGOCLOUD SDK when component mounts
-        const initZego = async () => {
-            try {
-                // This would be replaced with actual ZEGOCLOUD SDK initialization
-                console.log('Initializing ZEGOCLOUD SDK...');
-                // zegoRef.current = new ZegoExpressEngine(...);
-            } catch (error) {
-                console.error('Failed to initialize ZEGOCLOUD:', error);
-                setError(t('error_join_meeting'));
+        if (!isJoined && safeFallbackConfig?.defaultMode && connectionMode !== safeFallbackConfig.defaultMode) {
+            setConnectionMode(safeFallbackConfig.defaultMode);
+        }
+    }, [safeFallbackConfig?.defaultMode, connectionMode, isJoined]);
+
+    const joinWithFallbackKit = async () => {
+        if (!supportsFallback) {
+            throw new Error('Fallback disabled');
+        }
+
+        const zegoSdk = window.ZegoUIKitPrebuilt;
+        if (!zegoSdk) {
+            throw new Error('SDK unavailable');
+        }
+
+        if (!fallbackContainerRef.current) {
+            throw new Error('Missing container');
+        }
+
+        const appId = Number(safeFallbackConfig.appId);
+        const serverSecret = safeFallbackConfig.serverSecret;
+        if (!appId || !serverSecret) {
+            throw new Error('Missing fallback credentials');
+        }
+
+        if (zegoRef.current?.destroy) {
+            zegoRef.current.destroy();
+        }
+
+        const kitToken = zegoSdk.generateKitTokenForTest(
+            appId,
+            serverSecret,
+            meetingId,
+            user.id,
+            user.name || `user-${user.id}`
+        );
+
+        const sharedLink = `${window.location.protocol}//${window.location.host}${window.location.pathname}?roomID=${encodeURIComponent(meetingId)}`;
+        const scenarioFromConfig = safeFallbackConfig.options?.scenario || {};
+        const resolvedMode = scenarioFromConfig.mode && zegoSdk[scenarioFromConfig.mode]
+            ? zegoSdk[scenarioFromConfig.mode]
+            : zegoSdk[DEFAULT_SCENARIO_MODE];
+
+        const mergedOptions = {
+            turnOnMicrophoneWhenJoining: true,
+            turnOnCameraWhenJoining: true,
+            showMyCameraToggleButton: true,
+            showMyMicrophoneToggleButton: true,
+            showAudioVideoSettingsButton: true,
+            showScreenSharingButton: true,
+            showTextChat: true,
+            showUserList: true,
+            maxUsers: 50,
+            layout: 'Auto',
+            showLayoutButton: true,
+            ...safeFallbackConfig.options,
+            container: fallbackContainerRef.current,
+            sharedLinks: safeFallbackConfig.options?.sharedLinks || [
+                {
+                    name: 'Personal link',
+                    url: sharedLink
+                }
+            ],
+            scenario: {
+                ...scenarioFromConfig,
+                mode: resolvedMode,
+                ...(scenarioFromConfig.config ? { config: scenarioFromConfig.config } : {})
             }
         };
 
-        initZego();
-
-        return () => {
-            // Cleanup on unmount
-            if (zegoRef.current && isJoined) {
-                leaveRoom();
-            }
-        };
-    }, []);
+        const instance = zegoSdk.create(kitToken);
+        instance.joinRoom(mergedOptions);
+        zegoRef.current = instance;
+        setIsJoined(true);
+        setParticipants([{ id: user.id, name: user.name || user.id }]);
+        setError('');
+    };
 
     const joinRoom = async () => {
         if (!meetingId || !user) {
@@ -42,9 +116,14 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
 
         setIsLoading(true);
         setError('');
+        setAutoFallbackUsed(false);
 
         try {
-            // Generate token for ZEGOCLOUD
+            if (connectionMode === 'fallback') {
+                await joinWithFallbackKit();
+                return;
+            }
+
             const response = await fetch('/api/generate-token', {
                 method: 'POST',
                 headers: {
@@ -60,33 +139,40 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
                 throw new Error('Failed to generate token');
             }
 
-            const { token } = await response.json();
-
-            // Join room with ZEGOCLOUD SDK
-            // This would be replaced with actual ZEGOCLOUD SDK calls
+            const { token, user: responseUser } = await response.json();
             console.log('Joining room with token:', token);
-            
-            // Simulate successful join
+
             setIsJoined(true);
-            setParticipants([{ id: user.id, name: user.name }]);
-            
-        } catch (error) {
-            console.error('Error joining meeting:', error);
-            setError(t('error_join_meeting'));
+            setParticipants([{ id: responseUser?.id || user.id, name: responseUser?.name || user.name }]);
+        } catch (joinError) {
+            console.error('Error joining meeting:', joinError);
+            setError(connectionMode === 'fallback' ? t('fallback_missing_sdk') : t('error_join_meeting'));
+
+            if (supportsFallback && connectionMode !== 'fallback') {
+                try {
+                    setConnectionMode('fallback');
+                    setAutoFallbackUsed(true);
+                    await joinWithFallbackKit();
+                } catch (fallbackError) {
+                    console.error('Fallback join failed', fallbackError);
+                    setError(t('fallback_not_available'));
+                }
+            }
         } finally {
             setIsLoading(false);
         }
     };
 
-    const leaveRoom = async () => {
+    const leaveRoom = () => {
         try {
-            // Leave room with ZEGOCLOUD SDK
-            // zegoRef.current.logoutRoom();
-            console.log('Leaving room...');
-            
+            if (connectionMode === 'fallback' && zegoRef.current?.destroy) {
+                zegoRef.current.destroy();
+            }
+
             setIsJoined(false);
             setParticipants([]);
-            
+            setAutoFallbackUsed(false);
+
             if (onLeave) {
                 onLeave();
             }
@@ -97,13 +183,11 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
 
     const toggleCamera = () => {
         setIsCameraOn(!isCameraOn);
-        // zegoRef.current.enableCamera(!isCameraOn);
         console.log('Camera toggled:', !isCameraOn);
     };
 
     const toggleMicrophone = () => {
         setIsMicOn(!isMicOn);
-        // zegoRef.current.enableMicrophone(!isMicOn);
         console.log('Microphone toggled:', !isMicOn);
     };
 
@@ -112,13 +196,41 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
             <div className="mt-6 p-4 border rounded-lg bg-gray-50">
                 <h3 className="text-lg font-semibold mb-4">{t('join_meeting')}</h3>
                 <p className="text-gray-600 mb-4">{t('meeting_instructions')}</p>
-                
+
                 {error && (
                     <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
                         {error}
                     </div>
                 )}
-                
+
+                {autoFallbackUsed && supportsFallback && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded">
+                        {t('fallback_auto_enabled')}
+                    </div>
+                )}
+
+                <div className="mb-4">
+                    <label htmlFor="connectionMode" className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('connection_mode_label')}
+                    </label>
+                    <select
+                        id="connectionMode"
+                        value={connectionMode}
+                        onChange={(event) => setConnectionMode(event.target.value)}
+                        className="w-full px-4 py-2 border rounded"
+                        disabled={!supportsFallback && connectionMode !== 'api'}
+                    >
+                        <option value="api">{t('connection_mode_api')}</option>
+                        {supportsFallback && <option value="fallback">{t('connection_mode_fallback')}</option>}
+                    </select>
+                    {connectionMode === 'fallback' && supportsFallback && (
+                        <p className="text-xs text-gray-500 mt-1">{t('connection_mode_fallback_hint')}</p>
+                    )}
+                    {!supportsFallback && (
+                        <p className="text-xs text-gray-500 mt-1">{t('fallback_not_available')}</p>
+                    )}
+                </div>
+
                 <button
                     onClick={joinRoom}
                     disabled={isLoading || !meetingId}
@@ -146,56 +258,66 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
                 </span>
             </div>
 
-            {/* Video container - placeholder for actual video streams */}
-            <div className="bg-black rounded-lg mb-4 h-64 flex items-center justify-center">
-                <div className="text-white text-center">
-                    <div className="text-4xl mb-2">📹</div>
-                    <p>Video Conference Area</p>
-                    <p className="text-sm text-gray-300">
-                        ZEGOCLOUD video streams would appear here
-                    </p>
-                </div>
-            </div>
+            {connectionMode === 'fallback' && supportsFallback ? (
+                <>
+                    <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded">
+                        {t('fallback_active_banner')}
+                    </div>
+                    <div ref={fallbackContainerRef} className="w-full min-h-[400px] bg-black rounded-lg" />
+                </>
+            ) : (
+                <>
+                    <div className="bg-black rounded-lg mb-4 h-64 flex items-center justify-center">
+                        <div className="text-white text-center">
+                            <div className="text-4xl mb-2">📹</div>
+                            <p>Video Conference Area</p>
+                            <p className="text-sm text-gray-300">
+                                ZEGOCLOUD video streams would appear here
+                            </p>
+                        </div>
+                    </div>
 
-            {/* Control buttons */}
-            <div className="flex justify-center space-x-4 mb-4">
-                <button
-                    onClick={toggleCamera}
-                    className={`p-3 rounded-full transition-colors duration-200 ${
-                        isCameraOn
-                            ? 'bg-blue-500 text-white hover:bg-blue-600'
-                            : 'bg-red-500 text-white hover:bg-red-600'
-                    }`}
-                    aria-label={isCameraOn ? t('camera_off') : t('camera_on')}
-                    title={isCameraOn ? t('camera_off') : t('camera_on')}
-                >
-                    {isCameraOn ? '📹' : '📷'}
-                </button>
+                    <div className="flex justify-center space-x-4 mb-4">
+                        <button
+                            onClick={toggleCamera}
+                            className={`p-3 rounded-full transition-colors duration-200 ${
+                                isCameraOn
+                                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                                    : 'bg-red-500 text-white hover:bg-red-600'
+                            }`}
+                            aria-label={isCameraOn ? t('camera_off') : t('camera_on')}
+                            title={isCameraOn ? t('camera_off') : t('camera_on')}
+                        >
+                            {isCameraOn ? '📹' : '📷'}
+                        </button>
 
-                <button
-                    onClick={toggleMicrophone}
-                    className={`p-3 rounded-full transition-colors duration-200 ${
-                        isMicOn
-                            ? 'bg-blue-500 text-white hover:bg-blue-600'
-                            : 'bg-red-500 text-white hover:bg-red-600'
-                    }`}
-                    aria-label={isMicOn ? t('microphone_off') : t('microphone_on')}
-                    title={isMicOn ? t('microphone_off') : t('microphone_on')}
-                >
-                    {isMicOn ? '🎤' : '🔇'}
-                </button>
+                        <button
+                            onClick={toggleMicrophone}
+                            className={`p-3 rounded-full transition-colors duration-200 ${
+                                isMicOn
+                                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                                    : 'bg-red-500 text-white hover:bg-red-600'
+                            }`}
+                            aria-label={isMicOn ? t('microphone_off') : t('microphone_on')}
+                            title={isMicOn ? t('microphone_off') : t('microphone_on')}
+                        >
+                            {isMicOn ? '🎤' : '🔇'}
+                        </button>
+                    </div>
+                </>
+            )}
 
+            <div className="flex justify-center mb-4">
                 <button
                     onClick={leaveRoom}
-                    className="p-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors duration-200"
+                    className="py-2 px-6 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors duration-200"
                     aria-label={t('end_call')}
                     title={t('end_call')}
                 >
-                    📞
+                    {t('end_call')}
                 </button>
             </div>
 
-            {/* Participants list */}
             <div className="border-t pt-4">
                 <h4 className="font-medium mb-2">{t('participants')}:</h4>
                 <div className="space-y-2">

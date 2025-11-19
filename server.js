@@ -38,6 +38,7 @@ const {
     createRedisClient,
     closeRedisConnection
 } = require('./lib/redis');
+const { getSecret } = require('./lib/secrets');
 
 const app = express();
 const SPA_EXCLUDED_PREFIXES = ['/api', '/auth', '/health', '/locales'];
@@ -188,9 +189,33 @@ if (process.env.NODE_ENV === 'test') {
     })();
 }
 
-// Configuration constants
-const ZEGOCLOUD_APP_ID = process.env.ZEGOCLOUD_APP_ID || 'demo_app_id';
-const ZEGOCLOUD_SERVER_SECRET = process.env.ZEGOCLOUD_SERVER_SECRET || 'demo_server_secret';
+// Configuration constants & fallback strategies
+const DEFAULT_ZEGO_APP_ID = 234470600;
+const DEFAULT_ZEGO_SERVER_SECRET = 'db9a379cd5f3c8a4268f61a00cdd8600';
+const rawZegoAppId = getSecret('ZEGOCLOUD_APP_ID', DEFAULT_ZEGO_APP_ID);
+const ZEGOCLOUD_APP_ID = Number(rawZegoAppId) || DEFAULT_ZEGO_APP_ID;
+const ZEGOCLOUD_SERVER_SECRET = getSecret('ZEGOCLOUD_SERVER_SECRET', DEFAULT_ZEGO_SERVER_SECRET);
+const allowZegoClientFallback = `${getSecret('ALLOW_ZEGO_CLIENT_FALLBACK', process.env.ALLOW_ZEGO_CLIENT_FALLBACK ?? 'true')}` !== 'false';
+const defaultZegoMode = (getSecret('ZEGOCLOUD_DEFAULT_MODE', process.env.ZEGOCLOUD_DEFAULT_MODE || (isDemoMode ? 'fallback' : 'api')) || 'api').toLowerCase();
+const FALLBACK_ZEGO_OPTIONS = {
+    turnOnMicrophoneWhenJoining: true,
+    turnOnCameraWhenJoining: true,
+    showMyCameraToggleButton: true,
+    showMyMicrophoneToggleButton: true,
+    showAudioVideoSettingsButton: true,
+    showScreenSharingButton: true,
+    showTextChat: true,
+    showUserList: true,
+    maxUsers: 50,
+    layout: 'Auto',
+    showLayoutButton: true,
+    scenario: {
+        mode: 'VideoConference',
+        config: {
+            role: 'Host'
+        }
+    }
+};
 
 const franceTravailConfig = {
     clientId: process.env.FRANCETRAVAIL_CLIENT_ID || 'demo_client_id',
@@ -198,6 +223,19 @@ const franceTravailConfig = {
     redirectUri: process.env.FRANCETRAVAIL_REDIRECT_URI || 'http://localhost:3000/auth/francetravail/callback',
     authUrl: process.env.FRANCETRAVAIL_AUTH_URL || FRANCETRAVAIL_AUTH_URL
 };
+
+app.get('/api/config/client', (req, res) => {
+    res.json({
+        demoMode: isDemoMode,
+        zego: {
+            appId: Number(ZEGOCLOUD_APP_ID) || null,
+            allowClientFallback: allowZegoClientFallback,
+            defaultMode: allowZegoClientFallback ? defaultZegoMode : 'api',
+            options: FALLBACK_ZEGO_OPTIONS,
+            serverSecret: allowZegoClientFallback ? ZEGOCLOUD_SERVER_SECRET : null
+        }
+    });
+});
 
 // Home route
 app.get('/', (req, res) => {
