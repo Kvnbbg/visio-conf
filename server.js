@@ -231,8 +231,7 @@ app.get('/api/config/client', (req, res) => {
             appId: Number(ZEGOCLOUD_APP_ID) || null,
             allowClientFallback: allowZegoClientFallback,
             defaultMode: allowZegoClientFallback ? defaultZegoMode : 'api',
-            options: FALLBACK_ZEGO_OPTIONS,
-            serverSecret: allowZegoClientFallback ? ZEGOCLOUD_SERVER_SECRET : null
+            options: FALLBACK_ZEGO_OPTIONS
         }
     });
 });

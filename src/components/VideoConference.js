@@ -6,6 +6,11 @@ const DEFAULT_SCENARIO_MODE = 'VideoConference';
 const VideoConference = ({ meetingId, user, onLeave, fallbackZegoConfig }) => {
     const { t } = useTranslation();
     const safeFallbackConfig = fallbackZegoConfig || { options: {} };
+    const fallbackAvailable = Boolean(
+        safeFallbackConfig?.allowClientFallback &&
+        safeFallbackConfig?.appId &&
+        safeFallbackConfig?.kitToken
+    );
     const zegoRef = useRef(null);
     const fallbackContainerRef = useRef(null);
     const [isJoined, setIsJoined] = useState(false);
@@ -14,14 +19,15 @@ const VideoConference = ({ meetingId, user, onLeave, fallbackZegoConfig }) => {
     const [participants, setParticipants] = useState([]);
     const [isCameraOn, setIsCameraOn] = useState(true);
     const [isMicOn, setIsMicOn] = useState(true);
-    const [connectionMode, setConnectionMode] = useState(() => safeFallbackConfig?.defaultMode || 'api');
+    const [connectionMode, setConnectionMode] = useState(() => {
+        if (safeFallbackConfig?.defaultMode === 'fallback' && !fallbackAvailable) {
+            return 'api';
+        }
+        return safeFallbackConfig?.defaultMode || 'api';
+    });
     const [autoFallbackUsed, setAutoFallbackUsed] = useState(false);
 
-    const supportsFallback = Boolean(
-        safeFallbackConfig?.allowClientFallback &&
-        safeFallbackConfig?.appId &&
-        safeFallbackConfig?.serverSecret
-    );
+    const supportsFallback = fallbackAvailable;
 
     useEffect(() => () => {
         if (zegoRef.current?.destroy) {
@@ -31,9 +37,11 @@ const VideoConference = ({ meetingId, user, onLeave, fallbackZegoConfig }) => {
 
     useEffect(() => {
         if (!isJoined && safeFallbackConfig?.defaultMode && connectionMode !== safeFallbackConfig.defaultMode) {
-            setConnectionMode(safeFallbackConfig.defaultMode);
+            const requestedMode = safeFallbackConfig.defaultMode;
+            const resolvedMode = requestedMode === 'fallback' && !supportsFallback ? 'api' : requestedMode;
+            setConnectionMode(resolvedMode);
         }
-    }, [safeFallbackConfig?.defaultMode, connectionMode, isJoined]);
+    }, [safeFallbackConfig?.defaultMode, connectionMode, isJoined, supportsFallback]);
 
     const joinWithFallbackKit = async () => {
         if (!supportsFallback) {
@@ -50,8 +58,7 @@ const VideoConference = ({ meetingId, user, onLeave, fallbackZegoConfig }) => {
         }
 
         const appId = Number(safeFallbackConfig.appId);
-        const serverSecret = safeFallbackConfig.serverSecret;
-        if (!appId || !serverSecret) {
+        if (!appId) {
             throw new Error('Missing fallback credentials');
         }
 
@@ -59,13 +66,10 @@ const VideoConference = ({ meetingId, user, onLeave, fallbackZegoConfig }) => {
             zegoRef.current.destroy();
         }
 
-        const kitToken = zegoSdk.generateKitTokenForTest(
-            appId,
-            serverSecret,
-            meetingId,
-            user.id,
-            user.name || `user-${user.id}`
-        );
+        const kitToken = safeFallbackConfig.kitToken;
+        if (!kitToken) {
+            throw new Error('Fallback token unavailable');
+        }
 
         const sharedLink = `${window.location.protocol}//${window.location.host}${window.location.pathname}?roomID=${encodeURIComponent(meetingId)}`;
         const scenarioFromConfig = safeFallbackConfig.options?.scenario || {};
