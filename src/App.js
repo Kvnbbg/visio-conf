@@ -8,9 +8,8 @@ import './i18n'; // Initialize i18n
 
 const DEFAULT_ZEGO_CONFIG = {
     appId: 234470600,
-    serverSecret: 'db9a379cd5f3c8a4268f61a00cdd8600',
-    allowClientFallback: true,
-    defaultMode: 'fallback',
+    allowClientFallback: false,
+    defaultMode: 'api',
     options: {
         turnOnMicrophoneWhenJoining: true,
         turnOnCameraWhenJoining: true,
