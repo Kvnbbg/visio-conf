@@ -14,6 +14,13 @@
       "use": "@vercel/static"
     }
   ],
+  "redirects": [
+    {
+      "source": "/login",
+      "destination": "/auth/francetravail/login",
+      "permanent": false
+    }
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
@@ -50,13 +57,6 @@
       "dest": "/public/$1",
       "headers": {
         "Cache-Control": "public, max-age=31536000, immutable"
-      }
-    },
-    {
-      "src": "/login",
-      "status": 302,
-      "headers": {
-        "Location": "/auth/francetravail/login"
       }
     },
     {
