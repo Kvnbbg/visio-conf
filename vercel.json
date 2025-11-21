@@ -14,14 +14,14 @@
       "use": "@vercel/static"
     }
   ],
-  "redirects": [
-    {
-      "source": "/login",
-      "destination": "/auth/francetravail/login",
-      "permanent": false
-    }
-  ],
   "routes": [
+    {
+      "src": "/login",
+      "status": 307,
+      "headers": {
+        "Location": "/auth/francetravail/login"
+      }
+    },
     {
       "src": "/api/(.*)",
       "dest": "/server.js",
