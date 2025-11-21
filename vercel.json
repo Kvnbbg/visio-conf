@@ -55,7 +55,9 @@
     {
       "src": "/login",
       "status": 302,
-      "dest": "/auth/francetravail/login"
+      "headers": {
+        "Location": "/auth/francetravail/login"
+      }
     },
     {
       "src": "/(.*)",
