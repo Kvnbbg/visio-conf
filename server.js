@@ -142,8 +142,16 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Static assets
-app.use(express.static(path.join(__dirname, 'public')));
+// Static assets with explicit headers for HTML to avoid unintended downloads
+app.use(express.static(path.join(__dirname, 'public'), {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+            res.type('html');
+            res.setHeader('Content-Disposition', 'inline');
+            res.setHeader('Cache-Control', 'no-store');
+        }
+    }
+}));
 
 // Session configuration with optional Redis support
 const sessionCookieSameSite = isProduction ? 'strict' : 'lax';
@@ -239,7 +247,19 @@ app.get('/api/config/client', (req, res) => {
 
 // Home route
 app.get('/', (req, res) => {
-    res.sendFile(INDEX_HTML_PATH);
+    res.type('html');
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Cache-Control', 'no-store');
+
+    res.sendFile(INDEX_HTML_PATH, (error) => {
+        if (error) {
+            logger.error('Failed to serve SPA index', { error: error.message, path: req.path });
+
+            if (!res.headersSent) {
+                res.status(error.statusCode || 500).send('Erreur lors du chargement de l\'application');
+            }
+        }
+    });
 });
 
 // Health check endpoint
@@ -485,7 +505,19 @@ app.get('*', (req, res, next) => {
         return next();
     }
 
-    res.sendFile(INDEX_HTML_PATH);
+    res.type('html');
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Cache-Control', 'no-store');
+
+    res.sendFile(INDEX_HTML_PATH, (error) => {
+        if (error) {
+            logger.error('Failed to serve SPA index', { error: error.message, path: req.path });
+
+            if (!res.headersSent) {
+                res.status(error.statusCode || 500).send('Erreur lors du chargement de l\'application');
+            }
+        }
+    });
 });
 
 // Sentry error handler must be before any other error middleware
