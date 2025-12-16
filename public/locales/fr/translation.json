@@ -26,8 +26,12 @@
     "token_refreshed": "Session actualisée avec succès",
     "invalid_meeting_id": "Veuillez saisir un ID de réunion valide",
     "invalid_user_id": "Veuillez saisir un ID utilisateur valide",
+    "invalid_meeting_id_strict": "Les ID de réunion doivent comporter au moins 3 caractères (lettres, chiffres ou tirets).",
+    "invalid_user_id_strict": "Les ID utilisateur doivent comporter au moins 2 caractères (lettres, chiffres ou tirets).",
     "meeting_joined": "Connexion à la réunion réussie",
     "meeting_left": "Réunion quittée",
+    "meeting_id_rules": "Utilisez 3 à 50 caractères : lettres, chiffres et tirets uniquement.",
+    "user_id_rules": "Utilisez 2 à 50 caractères : lettres, chiffres et tirets uniquement.",
     "camera_on": "Activer la caméra",
     "camera_off": "Désactiver la caméra",
     "microphone_on": "Activer le microphone",
@@ -47,5 +51,8 @@
     "fallback_not_available": "Le mode de secours côté client est indisponible car les identifiants manquent.",
     "fallback_auto_enabled": "La génération du jeton API a échoué. Nous sommes passés automatiquement à l'expérience ZEGOCLOUD intégrée.",
     "fallback_active_banner": "Vous utilisez le kit ZEGOCLOUD intégré : audio, vidéo, chat et disposition sont gérés localement.",
-    "fallback_missing_sdk": "Impossible de charger le kit ZEGOCLOUD. Actualisez la page ou vérifiez votre connexion."
+    "fallback_missing_sdk": "Impossible de charger le kit ZEGOCLOUD. Actualisez la page ou vérifiez votre connexion.",
+    "restored_preferences": "Nous avons restauré vos derniers détails de réunion pour vous reconnecter plus vite.",
+    "join_requirements_unmet": "Ajoutez un ID de réunion et un ID utilisateur valides pour continuer.",
+    "join_ready": "Tout est prêt, vous pouvez rejoindre la réunion."
 }

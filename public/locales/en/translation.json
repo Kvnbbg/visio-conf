@@ -26,8 +26,12 @@
     "token_refreshed": "Session refreshed successfully",
     "invalid_meeting_id": "Please enter a valid meeting ID",
     "invalid_user_id": "Please enter a valid user ID",
+    "invalid_meeting_id_strict": "Meeting IDs must be at least 3 characters and use letters, numbers, or hyphens.",
+    "invalid_user_id_strict": "User IDs must be at least 2 characters and use letters, numbers, or hyphens.",
     "meeting_joined": "Successfully joined meeting",
     "meeting_left": "Left meeting",
+    "meeting_id_rules": "Use 3-50 characters: letters, numbers, and hyphens only.",
+    "user_id_rules": "Use 2-50 characters: letters, numbers, and hyphens only.",
     "camera_on": "Turn camera on",
     "camera_off": "Turn camera off",
     "microphone_on": "Turn microphone on",
@@ -47,5 +51,8 @@
     "fallback_not_available": "Client fallback is unavailable because the credentials are missing.",
     "fallback_auto_enabled": "API token generation failed. We automatically switched to the built-in ZEGOCLOUD experience.",
     "fallback_active_banner": "Using the built-in ZEGOCLOUD kit – audio, video, chat, and layout controls are handled locally.",
-    "fallback_missing_sdk": "Unable to load the ZEGOCLOUD kit. Please refresh or check your network connection."
+    "fallback_missing_sdk": "Unable to load the ZEGOCLOUD kit. Please refresh or check your network connection.",
+    "restored_preferences": "We restored your previous meeting details to help you rejoin faster.",
+    "join_requirements_unmet": "Add a valid meeting ID and user ID to continue.",
+    "join_ready": "All set—you're ready to join."
 }
