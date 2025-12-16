@@ -40,10 +40,27 @@ const App = () => {
     const [meetingId, setMeetingId] = useState('');
     const [userId, setUserId] = useState('');
     const [showVideoConference, setShowVideoConference] = useState(false);
+    const [restoredPreferences, setRestoredPreferences] = useState(false);
     const [clientConfig, setClientConfig] = useState({ zego: DEFAULT_ZEGO_CONFIG });
 
     useEffect(() => {
         checkAuthStatus();
+    }, []);
+
+    useEffect(() => {
+        const savedMeetingId = localStorage.getItem('lastMeetingId');
+        const savedUserId = localStorage.getItem('lastUserId');
+
+        if (savedMeetingId) {
+            setMeetingId(savedMeetingId);
+        }
+        if (savedUserId) {
+            setUserId(savedUserId);
+        }
+
+        if (savedMeetingId || savedUserId) {
+            setRestoredPreferences(true);
+        }
     }, []);
 
     useEffect(() => {
@@ -115,16 +132,23 @@ const App = () => {
     };
 
     const handleJoinMeeting = () => {
-        if (!meetingId.trim()) {
-            setError(t('invalid_meeting_id'));
+        const sanitizedMeetingId = meetingId.trim();
+        const sanitizedUserId = userId.trim();
+        const meetingIdValid = /^[\w-]{3,50}$/.test(sanitizedMeetingId);
+        const userIdValid = /^[\w-]{2,50}$/.test(sanitizedUserId);
+
+        if (!meetingIdValid) {
+            setError(t('invalid_meeting_id_strict'));
             return;
         }
-        
-        if (!userId.trim()) {
-            setError(t('invalid_user_id'));
+
+        if (!userIdValid) {
+            setError(t('invalid_user_id_strict'));
             return;
         }
-        
+
+        localStorage.setItem('lastMeetingId', sanitizedMeetingId);
+        localStorage.setItem('lastUserId', sanitizedUserId);
         setError('');
         setShowVideoConference(true);
     };
@@ -165,6 +189,10 @@ const App = () => {
         return () => window.removeEventListener('unauthorized', handleUnauthorized);
     }, [user]);
 
+    const isMeetingIdValid = /^[\w-]{3,50}$/.test(meetingId.trim());
+    const isUserIdValid = /^[\w-]{2,50}$/.test(userId.trim());
+    const isJoinDisabled = !isMeetingIdValid || !userId || !isUserIdValid;
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600">
             <div className="container mx-auto px-4 py-8">
@@ -186,11 +214,21 @@ const App = () => {
 
                         {/* Error Display */}
                         {error && (
-                            <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                            <div
+                                className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg"
+                                role="alert"
+                                aria-live="assertive"
+                            >
                                 <div className="flex items-center">
                                     <span className="mr-2">⚠️</span>
                                     {error}
                                 </div>
+                            </div>
+                        )}
+
+                        {restoredPreferences && !showVideoConference && (
+                            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg">
+                                {t('restored_preferences')}
                             </div>
                         )}
 
@@ -219,13 +257,21 @@ const App = () => {
                                                 id="meetingId"
                                                 type="text"
                                                 value={meetingId}
-                                                onChange={(e) => setMeetingId(e.target.value)}
+                                                onChange={(e) => {
+                                                    setMeetingId(e.target.value);
+                                                    if (error) setError('');
+                                                }}
                                                 placeholder={t('meeting_id_placeholder')}
                                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                 aria-describedby="meetingId-help"
+                                                aria-invalid={!isMeetingIdValid}
                                             />
                                             <p id="meetingId-help" className="mt-1 text-sm text-gray-500">
                                                 {t('meeting_instructions')}
+                                                <br />
+                                                <span className={isMeetingIdValid ? 'text-green-600' : 'text-red-600'}>
+                                                    {t('meeting_id_rules')}
+                                                </span>
                                             </p>
                                         </div>
 
@@ -237,17 +283,26 @@ const App = () => {
                                                 id="userId"
                                                 type="text"
                                                 value={userId}
-                                                onChange={(e) => setUserId(e.target.value)}
+                                                onChange={(e) => {
+                                                    setUserId(e.target.value);
+                                                    if (error) setError('');
+                                                }}
                                                 placeholder={t('user_id_placeholder')}
                                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                aria-invalid={!isUserIdValid}
                                             />
+                                            <p className="mt-1 text-sm text-gray-500">
+                                                <span className={isUserIdValid ? 'text-green-600' : 'text-red-600'}>
+                                                    {t('user_id_rules')}
+                                                </span>
+                                            </p>
                                         </div>
 
                                         <button
                                             onClick={handleJoinMeeting}
-                                            disabled={!meetingId.trim() || !userId.trim()}
+                                            disabled={isJoinDisabled}
                                             className={`w-full py-3 px-4 rounded-lg font-medium transition-colors duration-200 ${
-                                                meetingId.trim() && userId.trim()
+                                                !isJoinDisabled
                                                     ? 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500'
                                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                             }`}
@@ -255,6 +310,9 @@ const App = () => {
                                         >
                                             {t('join_meeting')}
                                         </button>
+                                        <p className="text-xs text-gray-500 text-center">
+                                            {isJoinDisabled ? t('join_requirements_unmet') : t('join_ready')}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
