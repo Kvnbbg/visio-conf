@@ -4,6 +4,7 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import AuthButton from './components/AuthButton';
 import VideoConference from './components/VideoConference';
 import HealthCheck from './components/HealthCheck';
+import ReadinessPanel from './components/ReadinessPanel';
 import './i18n'; // Initialize i18n
 
 const DEFAULT_ZEGO_CONFIG = {
@@ -205,6 +206,12 @@ const App = () => {
                         <HealthCheck />
                     </div>
                 </header>
+
+                <ReadinessPanel
+                    isMeetingIdValid={isMeetingIdValid}
+                    isUserIdValid={isUserIdValid}
+                    restoredPreferences={restoredPreferences}
+                />
 
                 {/* Main Content */}
                 <div className="max-w-2xl mx-auto">
