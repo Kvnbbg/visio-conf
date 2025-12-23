@@ -5,6 +5,8 @@ const path = require('path');
 require('dotenv').config();
 
 const logger = require('./lib/logger');
+const packageInfo = require('./package.json');
+const { loadConfig } = require('./lib/config');
 
 let helmet = null;
 try {
@@ -12,6 +14,7 @@ try {
 } catch (error) {
     logger.warn('Helmet not available, applying fallback security headers');
 }
+
 const { generateZegoToken, validateTokenParams } = require('./lib/tokenGenerator');
 const {
     generatePKCE,
@@ -24,10 +27,10 @@ const {
     exchangeCodeForToken: ftExchangeCode,
     refreshAccessToken: ftRefreshAccessToken,
     getUserInfo: ftGetUserInfo,
-    validateToken: ftValidateToken,
-    FRANCETRAVAIL_AUTH_URL
+    validateToken: ftValidateToken
 } = require('./lib/franceTravailAuth');
 const {
+    requestId,
     requestLogger,
     errorHandler,
     notFoundHandler,
@@ -38,28 +41,44 @@ const {
     createRedisClient,
     closeRedisConnection
 } = require('./lib/redis');
-const { getSecret } = require('./lib/secrets');
 
 const app = express();
 const SPA_EXCLUDED_PREFIXES = ['/api', '/auth', '/health', '/locales'];
 const INDEX_HTML_PATH = path.join(__dirname, 'public', 'index.html');
 
+const args = process.argv.slice(2);
+if (args.includes('--help') || args.includes('-h')) {
+    console.log(`Visio-Conf ${packageInfo.version}\n`);
+    console.log('Usage: node server.js [options]');
+    console.log('\nOptions:');
+    console.log('  -h, --help       Show this help output');
+    console.log('  -v, --version    Print the current version');
+    process.exit(0);
+}
+
+if (args.includes('--version') || args.includes('-v')) {
+    console.log(packageInfo.version);
+    process.exit(0);
+}
+
+const config = loadConfig();
+
 // Optional Sentry instrumentation
 let Sentry = null;
 let Tracing = null;
-if (process.env.SENTRY_DSN) {
+if (config.sentryDsn) {
     try {
         Sentry = require('@sentry/node');
         Tracing = require('@sentry/tracing');
 
         Sentry.init({
-            dsn: process.env.SENTRY_DSN,
+            dsn: config.sentryDsn,
             integrations: [
                 new Sentry.Integrations.Http({ tracing: true }),
                 new Tracing.Integrations.Express({ app })
             ],
-            tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-            environment: process.env.NODE_ENV || 'development',
+            tracesSampleRate: config.isProduction ? 0.1 : 1.0,
+            environment: config.nodeEnv || 'development',
             beforeSend(event) {
                 if (event.request && event.request.headers) {
                     delete event.request.headers.authorization;
@@ -76,13 +95,9 @@ if (process.env.SENTRY_DSN) {
     }
 }
 
-const isProduction = process.env.NODE_ENV === 'production';
-const hasFranceTravailCredentials = Boolean(
-    process.env.FRANCETRAVAIL_CLIENT_ID &&
-    process.env.FRANCETRAVAIL_CLIENT_SECRET &&
-    process.env.FRANCETRAVAIL_CLIENT_ID !== 'demo_client_id'
-);
-const isDemoMode = process.env.DEMO_MODE === 'true' || (!process.env.DEMO_MODE && !hasFranceTravailCredentials);
+const isProduction = config.isProduction;
+const hasFranceTravailCredentials = config.hasFranceTravailCredentials;
+const isDemoMode = config.demoMode;
 
 if (isDemoMode) {
     logger.warn('Application démarrée en mode démonstration. Utilisez DEMO_MODE=false en production.');
@@ -105,14 +120,12 @@ if (helmet) {
     });
 }
 
-// Request logging
+// Request context & logging
+app.use(requestId);
 app.use(requestLogger);
 
 // Basic rate limiting for all API routes
-const apiLimiter = createRateLimit(
-    parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
-    15 * 60 * 1000
-);
+const apiLimiter = createRateLimit(config.rateLimitMax, 15 * 60 * 1000);
 app.use('/api/', apiLimiter);
 
 // Body parsing
@@ -126,12 +139,7 @@ app.use(cors({
             return callback(null, true);
         }
 
-        const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
-            .split(',')
-            .map((value) => value.trim())
-            .filter(Boolean);
-
-        if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        if (config.corsAllowedOrigins.length === 0 || config.corsAllowedOrigins.includes(origin)) {
             return callback(null, true);
         }
 
@@ -156,7 +164,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 // Session configuration with optional Redis support
 const sessionCookieSameSite = isProduction ? 'strict' : 'lax';
 const baseSessionOptions = {
-    secret: process.env.SESSION_SECRET || 'demo_session_secret',
+    secret: config.sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -171,12 +179,12 @@ const baseSessionOptions = {
 let sessionMiddleware = session(baseSessionOptions);
 app.use((req, res, next) => sessionMiddleware(req, res, next));
 
-if (process.env.NODE_ENV === 'test') {
+if (config.nodeEnv === 'test') {
     logger.info('Skipping Redis session store initialisation during tests');
 } else {
     (async () => {
         try {
-            const redisClient = await createRedisClient();
+            const redisClient = await createRedisClient(config.redisUrl);
             if (redisClient) {
                 const RedisStore = require('connect-redis').default;
                 sessionMiddleware = session({
@@ -198,13 +206,10 @@ if (process.env.NODE_ENV === 'test') {
 }
 
 // Configuration constants & fallback strategies
-const DEFAULT_ZEGO_APP_ID = 234470600;
-const DEFAULT_ZEGO_SERVER_SECRET = 'db9a379cd5f3c8a4268f61a00cdd8600';
-const rawZegoAppId = getSecret('ZEGOCLOUD_APP_ID', DEFAULT_ZEGO_APP_ID);
-const ZEGOCLOUD_APP_ID = Number(rawZegoAppId) || DEFAULT_ZEGO_APP_ID;
-const ZEGOCLOUD_SERVER_SECRET = getSecret('ZEGOCLOUD_SERVER_SECRET', DEFAULT_ZEGO_SERVER_SECRET);
-const allowZegoClientFallback = `${getSecret('ALLOW_ZEGO_CLIENT_FALLBACK', process.env.ALLOW_ZEGO_CLIENT_FALLBACK ?? 'true')}` !== 'false';
-const defaultZegoMode = (getSecret('ZEGOCLOUD_DEFAULT_MODE', process.env.ZEGOCLOUD_DEFAULT_MODE || (isDemoMode ? 'fallback' : 'api')) || 'api').toLowerCase();
+const ZEGOCLOUD_APP_ID = Number(config.zego.appId) || config.zego.appId;
+const ZEGOCLOUD_SERVER_SECRET = config.zego.serverSecret;
+const allowZegoClientFallback = config.zego.allowClientFallback;
+const defaultZegoMode = allowZegoClientFallback ? config.zego.defaultMode : 'api';
 const FALLBACK_ZEGO_OPTIONS = {
     turnOnMicrophoneWhenJoining: true,
     turnOnCameraWhenJoining: true,
@@ -226,11 +231,17 @@ const FALLBACK_ZEGO_OPTIONS = {
 };
 
 const franceTravailConfig = {
-    clientId: process.env.FRANCETRAVAIL_CLIENT_ID || 'demo_client_id',
-    clientSecret: process.env.FRANCETRAVAIL_CLIENT_SECRET || 'demo_client_secret',
-    redirectUri: process.env.FRANCETRAVAIL_REDIRECT_URI || 'http://localhost:3000/auth/francetravail/callback',
-    authUrl: process.env.FRANCETRAVAIL_AUTH_URL || FRANCETRAVAIL_AUTH_URL
+    clientId: config.franceTravail.clientId,
+    clientSecret: config.franceTravail.clientSecret,
+    redirectUri: config.franceTravail.redirectUri,
+    authUrl: config.franceTravail.authUrl
 };
+
+const buildHealthPayload = () => ({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: config.nodeEnv || 'development'
+});
 
 app.get('/api/config/client', (req, res) => {
     res.json({
@@ -262,13 +273,13 @@ app.get('/', (req, res) => {
     });
 });
 
-// Health check endpoint
+// Health check endpoints
 app.get('/health', (req, res) => {
-    res.json({
-        status: 'OK',
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
-    });
+    res.json(buildHealthPayload());
+});
+
+app.get('/api/health', (req, res) => {
+    res.json(buildHealthPayload());
 });
 
 // Application configuration endpoint (used by the SPA)
@@ -294,7 +305,10 @@ app.get('/api/auth/status', (req, res) => {
 // Initiate France Travail authentication
 app.get('/auth/francetravail/login', (req, res) => {
     if (!hasFranceTravailCredentials) {
-        return res.status(400).json({ error: 'France Travail OAuth non configuré' });
+        return res.status(400).json({
+            error: 'France Travail OAuth non configuré. Définissez FRANCETRAVAIL_CLIENT_ID/SECRET.',
+            code: 'FT_OAUTH_NOT_CONFIGURED'
+        });
     }
 
     try {
@@ -422,7 +436,7 @@ app.post('/api/generate-token',
         const isAuthenticated = Boolean(req.session?.user);
         if (!isAuthenticated && !isDemoMode) {
             return res.status(401).json({
-                error: 'Authentification requise',
+                error: 'Authentification requise. Connectez-vous via France Travail.',
                 code: 'AUTH_REQUIRED'
             });
         }
@@ -529,7 +543,7 @@ if (Sentry) {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
+const PORT = config.port;
 
 if (require.main === module) {
     const server = app.listen(PORT, '0.0.0.0', () => {

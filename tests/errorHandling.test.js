@@ -42,7 +42,7 @@ describe('Error Handling', () => {
 
     expect(response.body).toHaveProperty('error', 'Erreur lors de la génération du token');
     expect(generateZegoToken).toHaveBeenCalledWith(
-      expect.any(String),
+      expect.any(Number),
       expect.any(String),
       'test_room',
       'test_user'

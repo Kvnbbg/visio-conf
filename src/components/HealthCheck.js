@@ -13,7 +13,7 @@ const HealthCheck = () => {
                 const data = await response.json();
                 setHealth(data);
             } catch (error) {
-                setHealth({ status: 'error', message: 'Failed to check health' });
+                setHealth({ status: 'error', message: t('health_error_details') });
             } finally {
                 setLoading(false);
             }
@@ -48,6 +48,9 @@ const HealthCheck = () => {
             <span>
                 {isHealthy ? t('health_ok') : t('health_error')}
             </span>
+            {!isHealthy && health?.message && (
+                <span className="text-xs opacity-80">({health.message})</span>
+            )}
         </div>
     );
 };
