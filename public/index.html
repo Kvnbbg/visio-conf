@@ -393,6 +393,7 @@
                     "health_check": "État du système",
                     "health_ok": "Le système fonctionne normalement",
                     "health_error": "Erreur système détectée",
+                    "health_error_details": "Impossible de joindre le serveur",
                     "session_expired": "Votre session a expiré. Veuillez vous reconnecter.",
                     "invalid_meeting_id": "Veuillez saisir un ID de réunion valide",
                     "invalid_user_id": "Veuillez saisir un ID utilisateur valide",
@@ -475,6 +476,7 @@
                     "health_check": "System Status",
                     "health_ok": "System is operational",
                     "health_error": "System error detected",
+                    "health_error_details": "Unable to reach the server",
                     "session_expired": "Your session has expired. Please log in again.",
                     "invalid_meeting_id": "Please enter a valid meeting ID",
                     "invalid_user_id": "Please enter a valid user ID",
@@ -638,7 +640,7 @@
                         const data = await response.json();
                         setHealth(data);
                     } catch (error) {
-                        setHealth({ status: 'error', message: 'Failed to check health' });
+                        setHealth({ status: 'error', message: i18next.t('health_error_details') });
                     } finally {
                         setLoading(false);
                     }
@@ -670,6 +672,11 @@
                     <span>
                         {isHealthy ? i18next.t('health_ok') : i18next.t('health_error')}
                     </span>
+                    {!isHealthy && health?.message && (
+                        <span className="text-xs opacity-80">
+                            ({health.message})
+                        </span>
+                    )}
                 </div>
             );
         };

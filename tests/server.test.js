@@ -24,7 +24,7 @@ function createTestApp() {
     // Health check endpoint
     app.get('/health', (req, res) => {
         res.json({ 
-            status: 'OK', 
+            status: 'ok', 
             timestamp: new Date().toISOString(),
             environment: process.env.NODE_ENV || 'test'
         });
@@ -123,7 +123,7 @@ describe('Server API Endpoints', () => {
                 .get('/health')
                 .expect(200);
 
-            expect(response.body.status).toBe('OK');
+            expect(response.body.status).toBe('ok');
             expect(response.body.timestamp).toBeDefined();
             expect(response.body.environment).toBeDefined();
         });

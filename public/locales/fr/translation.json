@@ -22,6 +22,7 @@
     "health_check": "État du système",
     "health_ok": "Le système fonctionne normalement",
     "health_error": "Erreur système détectée",
+    "health_error_details": "Impossible de joindre le serveur",
     "session_expired": "Votre session a expiré. Veuillez vous reconnecter.",
     "token_refreshed": "Session actualisée avec succès",
     "invalid_meeting_id": "Veuillez saisir un ID de réunion valide",
