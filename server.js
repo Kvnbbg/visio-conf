@@ -284,6 +284,7 @@ app.get('/api/config/client', (req, res) => {
     res.json({
         demoMode: isDemoMode,
         franceTravailEnabled: hasFranceTravailCredentials,
+        googleEnabled: config.google?.enabled ?? false,
         zego: {
             appId: Number(ZEGOCLOUD_APP_ID) || null,
             allowClientFallback: allowZegoClientFallback,
@@ -324,7 +325,8 @@ app.get('/api/health', (req, res) => {
 app.get('/api/config', (req, res) => {
     res.json({
         demoMode: isDemoMode,
-        franceTravailEnabled: hasFranceTravailCredentials
+        franceTravailEnabled: hasFranceTravailCredentials,
+        googleEnabled: config.google?.enabled ?? false
     });
 });
 

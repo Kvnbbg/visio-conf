@@ -211,6 +211,27 @@
             color: var(--text-strong);
         }
 
+        .resource-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .resource-card {
+            border-radius: 1.25rem;
+            padding: 1.25rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            color: var(--text-strong);
+        }
+
+        .resource-card a {
+            align-self: flex-start;
+        }
+
         .demo-card {
             border-radius: 1.5rem;
             border: 1px solid rgba(255, 255, 255, 0.14);
@@ -414,6 +435,7 @@
                     "google_login_button": "Continuer avec Google",
                     "google_login_error": "Impossible de démarrer la connexion Google",
                     "google_redirect_notice": "Redirection sécurisée vers Google...",
+                    "google_unavailable": "La connexion Google n'est pas encore configurée.",
                     "auth_status_title": "Intégrations disponibles",
                     "auth_status_ready": "Opérationnel",
                     "auth_status_disabled": "Configuration requise",
@@ -442,8 +464,22 @@
                     "switch_to_login": "Déjà inscrit ? Revenez à la connexion",
                     "form_disclaimer": "Vos identifiants sont chiffrés et stockés en France.",
                     "divider_or": "ou",
+                    "invite_link_button": "Copier le lien d'invitation",
+                    "invite_link_success": "Lien d'invitation copié dans le presse-papiers.",
+                    "invite_link_unavailable": "Le lien ne peut pas être copié sur cet appareil.",
                     "cta_normal_login": "Connexion classique",
                     "cta_register": "Inscription",
+                    "resources_title": "Bases open source prêtes pour Vercel",
+                    "resources_subtitle": "Démarrez vite avec des fondations gratuites et éprouvées.",
+                    "resource_openrtc_title": "OpenRTC (Vercel-ready)",
+                    "resource_openrtc_desc": "Rooms, partage de lien et UI prête à déployer.",
+                    "resource_videocalling_title": "Video-Calling (React + WebRTC)",
+                    "resource_videocalling_desc": "Multi-participants et instructions Vercel intégrées.",
+                    "resource_groupchat_title": "webrtc-group-chat-example",
+                    "resource_groupchat_desc": "Signaling Node + Socket.io facilement hébergeable.",
+                    "resource_jaas_title": "Jitsi-as-a-Service + Vercel",
+                    "resource_jaas_desc": "Expérience type Zoom via Jitsi et serverless.",
+                    "resource_cta": "Voir le projet",
                     "social_follow_label": "Restez connectés",
                     "footer_signature": "© 2024 @techandstream · Kevin Marville",
                     "rights_reserved": "Tous droits réservés.",
@@ -497,6 +533,7 @@
                     "google_login_button": "Continue with Google",
                     "google_login_error": "Unable to launch Google sign-in",
                     "google_redirect_notice": "Redirecting to Google securely...",
+                    "google_unavailable": "Google sign-in is not configured yet.",
                     "auth_status_title": "Available integrations",
                     "auth_status_ready": "Operational",
                     "auth_status_disabled": "Setup required",
@@ -525,8 +562,22 @@
                     "switch_to_login": "Already registered? Back to login",
                     "form_disclaimer": "Your credentials are encrypted and stored in France.",
                     "divider_or": "or",
+                    "invite_link_button": "Copy invite link",
+                    "invite_link_success": "Invite link copied to clipboard.",
+                    "invite_link_unavailable": "Unable to copy the link on this device.",
                     "cta_normal_login": "Classic login",
                     "cta_register": "Register",
+                    "resources_title": "Vercel-ready open-source starters",
+                    "resources_subtitle": "Fast-track your launch with proven free foundations.",
+                    "resource_openrtc_title": "OpenRTC (Vercel-ready)",
+                    "resource_openrtc_desc": "Rooms, shareable links, and UI ready to deploy.",
+                    "resource_videocalling_title": "Video-Calling (React + WebRTC)",
+                    "resource_videocalling_desc": "Multi-party calling with Vercel instructions.",
+                    "resource_groupchat_title": "webrtc-group-chat-example",
+                    "resource_groupchat_desc": "Node + Socket.io signaling you can host anywhere.",
+                    "resource_jaas_title": "Jitsi-as-a-Service + Vercel",
+                    "resource_jaas_desc": "Zoom-like UX powered by Jitsi + serverless.",
+                    "resource_cta": "View project",
                     "social_follow_label": "Stay connected",
                     "footer_signature": "© 2024 @techandstream · Kevin Marville",
                     "rights_reserved": "All rights reserved.",
@@ -723,6 +774,63 @@
             </section>
         );
 
+        const ResourceHighlights = () => {
+            const resources = [
+                {
+                    key: 'openrtc',
+                    title: i18next.t('resource_openrtc_title'),
+                    description: i18next.t('resource_openrtc_desc'),
+                    href: 'https://openrtc.vercel.app/meeting'
+                },
+                {
+                    key: 'videocalling',
+                    title: i18next.t('resource_videocalling_title'),
+                    description: i18next.t('resource_videocalling_desc'),
+                    href: 'https://github.com/tanish35/Video-Calling'
+                },
+                {
+                    key: 'groupchat',
+                    title: i18next.t('resource_groupchat_title'),
+                    description: i18next.t('resource_groupchat_desc'),
+                    href: 'https://github.com/anoek/webrtc-group-chat-example'
+                },
+                {
+                    key: 'jaas',
+                    title: i18next.t('resource_jaas_title'),
+                    description: i18next.t('resource_jaas_desc'),
+                    href: 'https://dev.to/chriscorcoran/create-a-video-app-with-jaas-react-and-vercel-49fe'
+                }
+            ];
+
+            return (
+                <section className="mt-10">
+                    <div className="flex flex-col gap-2 mb-4 text-center">
+                        <h3 className="text-white text-base font-semibold">{i18next.t('resources_title')}</h3>
+                        <p className="text-white/70 text-sm">{i18next.t('resources_subtitle')}</p>
+                    </div>
+                    <div className="resource-grid">
+                        {resources.map((resource) => (
+                            <article key={resource.key} className="resource-card">
+                                <div>
+                                    <p className="text-white font-semibold">{resource.title}</p>
+                                    <p className="text-white/70 text-sm leading-relaxed">{resource.description}</p>
+                                </div>
+                                <a
+                                    href={resource.href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-white/80 hover:text-white hover:bg-white/20 transition-colors text-sm"
+                                >
+                                    {i18next.t('resource_cta')}
+                                    <span aria-hidden="true">→</span>
+                                </a>
+                            </article>
+                        ))}
+                    </div>
+                </section>
+            );
+        };
+
         // Main App Component
         const App = () => {
             const [user, setUser] = useState(null);
@@ -732,7 +840,7 @@
             const [meetingId, setMeetingId] = useState('');
             const [userId, setUserId] = useState('');
             const [showVideoConference, setShowVideoConference] = useState(false);
-            const [appConfig, setAppConfig] = useState({ demoMode: false, franceTravailEnabled: true });
+            const [appConfig, setAppConfig] = useState({ demoMode: false, franceTravailEnabled: true, googleEnabled: false });
             const [demoLoading, setDemoLoading] = useState(false);
             const [authMode, setAuthMode] = useState('login');
             const [email, setEmail] = useState('');
@@ -753,6 +861,20 @@
             useEffect(() => {
                 setIsDemoCardOpen(appConfig.demoMode);
             }, [appConfig.demoMode]);
+
+            useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                const presetRoom = params.get('room');
+                const presetUser = params.get('user');
+
+                if (presetRoom) {
+                    setMeetingId(presetRoom);
+                }
+
+                if (presetUser && !userId) {
+                    setUserId(presetUser);
+                }
+            }, [userId]);
 
             const loadConfig = async () => {
                 try {
@@ -874,6 +996,11 @@
 
             const handleGoogleLogin = () => {
                 resetAuthFeedback();
+                if (!appConfig.googleEnabled) {
+                    setInfoMessage('');
+                    setError(i18next.t('google_unavailable'));
+                    return;
+                }
                 try {
                     setInfoMessage(i18next.t('google_redirect_notice'));
                     window.location.href = '/auth/google';
@@ -917,7 +1044,32 @@
                 setPassword('');
             };
 
+            const handleCopyInviteLink = async () => {
+                resetAuthFeedback();
+
+                if (!meetingId.trim()) {
+                    setError(i18next.t('invalid_meeting_id'));
+                    return;
+                }
+
+                const url = new URL(window.location.href);
+                url.searchParams.set('room', meetingId.trim());
+
+                try {
+                    if (navigator.clipboard?.writeText) {
+                        await navigator.clipboard.writeText(url.toString());
+                        setInfoMessage(i18next.t('invite_link_success'));
+                    } else {
+                        throw new Error('Clipboard unavailable');
+                    }
+                } catch (err) {
+                    console.error('Failed to copy invite link:', err);
+                    setError(i18next.t('invite_link_unavailable'));
+                }
+            };
+
             const franceTravailDisabled = !appConfig.franceTravailEnabled;
+            const googleDisabled = !appConfig.googleEnabled;
             const showDemoCta = appConfig.demoMode;
             const toggleDemoCard = () => setIsDemoCardOpen((prev) => !prev);
             const isRegisterMode = authMode === 'register';
@@ -932,7 +1084,7 @@
                 {
                     key: 'google',
                     icon: '🔗',
-                    status: 'ready',
+                    status: googleDisabled ? 'disabled' : 'ready',
                     label: i18next.t('auth_status_google'),
                     description: i18next.t('auth_status_google_desc')
                 },
@@ -1091,6 +1243,18 @@
                                                     >
                                                         {i18next.t('join_meeting')}
                                                     </button>
+
+                                                    <button
+                                                        onClick={handleCopyInviteLink}
+                                                        disabled={!meetingId.trim()}
+                                                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                                                            meetingId.trim()
+                                                                ? 'bg-white/10 text-white hover:bg-white/20'
+                                                                : 'bg-white/5 text-white/40 cursor-not-allowed'
+                                                        }`}
+                                                    >
+                                                        {i18next.t('invite_link_button')}
+                                                    </button>
                                                 </div>
                                             </div>
 
@@ -1152,12 +1316,22 @@
 
                                         <button
                                             onClick={handleGoogleLogin}
-                                            className="w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center space-x-3 bg-white text-gray-900 hover:shadow-lg hover:-translate-y-0.5"
+                                            disabled={googleDisabled}
+                                            className={`w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center space-x-3 ${
+                                                googleDisabled
+                                                    ? 'bg-white/5 text-white/40 cursor-not-allowed'
+                                                    : 'bg-white text-gray-900 hover:shadow-lg hover:-translate-y-0.5'
+                                            }`}
                                             aria-label={i18next.t('google_login_button')}
                                         >
                                             <span className="text-2xl" aria-hidden="true">🔒</span>
                                             <span>{i18next.t('google_login_button')}</span>
                                         </button>
+                                        {googleDisabled && (
+                                            <p className="text-xs text-yellow-200 text-center md:col-span-2">
+                                                {i18next.t('google_unavailable')}
+                                            </p>
+                                        )}
                                     </div>
                                     {franceTravailDisabled && (
                                         <p className="text-sm text-yellow-200 text-center">
@@ -1355,6 +1529,7 @@
                             )}
 
                             <FeatureHighlights />
+                            <ResourceHighlights />
 
                             <footer className="mt-10 pt-6 border-t border-white/10 text-center text-sm text-white/80">
                                 <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
