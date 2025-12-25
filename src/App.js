@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './components/LanguageSwitcher';
-import AuthButton from './components/AuthButton';
+import AuthPanel from './components/AuthPanel';
+import LandingPage from './components/LandingPage';
+import ConsultationIndex from './components/ConsultationIndex';
+import PageTabs from './components/PageTabs';
 import VideoConference from './components/VideoConference';
 import HealthCheck from './components/HealthCheck';
 import ReadinessPanel from './components/ReadinessPanel';
@@ -42,7 +45,13 @@ const App = () => {
     const [userId, setUserId] = useState('');
     const [showVideoConference, setShowVideoConference] = useState(false);
     const [restoredPreferences, setRestoredPreferences] = useState(false);
-    const [clientConfig, setClientConfig] = useState({ zego: DEFAULT_ZEGO_CONFIG });
+    const [clientConfig, setClientConfig] = useState({
+        zego: DEFAULT_ZEGO_CONFIG,
+        demoMode: false,
+        franceTravailEnabled: false
+    });
+    const [activePage, setActivePage] = useState('landing');
+    const [authMode, setAuthMode] = useState('register');
 
     useEffect(() => {
         checkAuthStatus();
@@ -74,7 +83,8 @@ const App = () => {
                 const data = await response.json();
                 setClientConfig((previous) => ({
                     ...previous,
-                    ...data,
+                    demoMode: Boolean(data.demoMode),
+                    franceTravailEnabled: Boolean(data.franceTravailEnabled),
                     zego: {
                         ...previous.zego,
                         ...(data.zego || {}),
@@ -158,6 +168,12 @@ const App = () => {
         setShowVideoConference(false);
     };
 
+    const handleAuthSuccess = (authUser) => {
+        setUser(authUser);
+        setUserId(authUser.id || authUser.name || 'user');
+        setError('');
+    };
+
     const refreshToken = async () => {
         try {
             const response = await fetch('/api/auth/refresh');
@@ -194,35 +210,53 @@ const App = () => {
     const isUserIdValid = /^[\w-]{2,50}$/.test(userId.trim());
     const isJoinDisabled = !isMeetingIdValid || !userId || !isUserIdValid;
 
+    const handleGetStarted = () => {
+        setActivePage('conference');
+        setAuthMode('register');
+    };
+
+    const handleViewIndex = () => {
+        setActivePage('index');
+    };
+
+    const handleJoinConsultation = () => {
+        setActivePage('conference');
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600">
             <div className="container mx-auto px-4 py-8">
                 {/* Header */}
-                <header className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">
-                        {t('welcome')}
-                    </h1>
-                    <div className="flex justify-center mb-4">
-                        <HealthCheck />
+                <header className="mb-8 space-y-4">
+                    <div className="flex flex-col items-center gap-4 text-center">
+                        <h1 className="text-4xl font-bold text-white mb-2">
+                            {t('welcome')}
+                        </h1>
+                        <div className="flex flex-wrap items-center justify-center gap-4">
+                            <HealthCheck />
+                            <LanguageSwitcher />
+                        </div>
+                    </div>
+                    <div className="flex justify-center">
+                        <PageTabs activePage={activePage} onChange={setActivePage} />
                     </div>
                 </header>
 
-                <ReadinessPanel
-                    isMeetingIdValid={isMeetingIdValid}
-                    isUserIdValid={isUserIdValid}
-                    restoredPreferences={restoredPreferences}
-                />
+                {activePage === 'landing' && (
+                    <ReadinessPanel
+                        isMeetingIdValid={isMeetingIdValid}
+                        isUserIdValid={isUserIdValid}
+                        restoredPreferences={restoredPreferences}
+                    />
+                )}
 
                 {/* Main Content */}
-                <div className="max-w-2xl mx-auto">
-                    <div className="bg-white rounded-xl shadow-2xl p-8">
-                        {/* Language Switcher */}
-                        <LanguageSwitcher />
-
+                <div className="mx-auto max-w-4xl">
+                    <div className="rounded-3xl bg-white p-8 shadow-2xl">
                         {/* Error Display */}
                         {error && (
                             <div
-                                className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg"
+                                className="mb-6 rounded-lg border border-red-400 bg-red-100 p-4 text-red-700"
                                 role="alert"
                                 aria-live="assertive"
                             >
@@ -233,110 +267,126 @@ const App = () => {
                             </div>
                         )}
 
-                        {restoredPreferences && !showVideoConference && (
-                            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg">
+                        {restoredPreferences && !showVideoConference && activePage === 'conference' && (
+                            <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-800">
                                 {t('restored_preferences')}
                             </div>
                         )}
 
-                        {/* Authentication Section */}
-                        <AuthButton
-                            user={user}
-                            onLogin={handleLogin}
-                            onLogout={handleLogout}
-                            loading={loading}
-                        />
+                        {activePage === 'landing' && (
+                            <LandingPage onGetStarted={handleGetStarted} onViewIndex={handleViewIndex} />
+                        )}
 
-                        {/* Meeting Controls - Only show when authenticated */}
-                        {user && !showVideoConference && (
-                            <div className="mt-8 space-y-4">
-                                <div className="border-t pt-6">
-                                    <h2 className="text-xl font-semibold mb-4 text-gray-800">
-                                        {t('join_meeting')}
-                                    </h2>
-                                    
+                        {activePage === 'index' && (
+                            <ConsultationIndex onJoinConsultation={handleJoinConsultation} />
+                        )}
+
+                        {activePage === 'conference' && (
+                            <div className="space-y-8">
+                                <AuthPanel
+                                    user={user}
+                                    loading={loading}
+                                    onLogout={handleLogout}
+                                    onAuthSuccess={handleAuthSuccess}
+                                    onFranceTravailLogin={handleLogin}
+                                    demoMode={clientConfig.demoMode}
+                                    franceTravailEnabled={clientConfig.franceTravailEnabled}
+                                    mode={authMode}
+                                    onModeChange={setAuthMode}
+                                />
+
+                                {/* Meeting Controls - Only show when authenticated */}
+                                {user && !showVideoConference && (
                                     <div className="space-y-4">
-                                        <div>
-                                            <label htmlFor="meetingId" className="block text-sm font-medium text-gray-700 mb-2">
-                                                {t('meeting_id')}
-                                            </label>
-                                            <input
-                                                id="meetingId"
-                                                type="text"
-                                                value={meetingId}
-                                                onChange={(e) => {
-                                                    setMeetingId(e.target.value);
-                                                    if (error) setError('');
-                                                }}
-                                                placeholder={t('meeting_id_placeholder')}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                aria-describedby="meetingId-help"
-                                                aria-invalid={!isMeetingIdValid}
-                                            />
-                                            <p id="meetingId-help" className="mt-1 text-sm text-gray-500">
-                                                {t('meeting_instructions')}
-                                                <br />
-                                                <span className={isMeetingIdValid ? 'text-green-600' : 'text-red-600'}>
-                                                    {t('meeting_id_rules')}
-                                                </span>
-                                            </p>
-                                        </div>
+                                        <div className="border-t pt-6">
+                                            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+                                                {t('join_meeting')}
+                                            </h2>
 
-                                        <div>
-                                            <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-2">
-                                                {t('user_id')}
-                                            </label>
-                                            <input
-                                                id="userId"
-                                                type="text"
-                                                value={userId}
-                                                onChange={(e) => {
-                                                    setUserId(e.target.value);
-                                                    if (error) setError('');
-                                                }}
-                                                placeholder={t('user_id_placeholder')}
-                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                aria-invalid={!isUserIdValid}
-                                            />
-                                            <p className="mt-1 text-sm text-gray-500">
-                                                <span className={isUserIdValid ? 'text-green-600' : 'text-red-600'}>
-                                                    {t('user_id_rules')}
-                                                </span>
-                                            </p>
-                                        </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label htmlFor="meetingId" className="block text-sm font-medium text-gray-700 mb-2">
+                                                        {t('meeting_id')}
+                                                    </label>
+                                                    <input
+                                                        id="meetingId"
+                                                        type="text"
+                                                        value={meetingId}
+                                                        onChange={(e) => {
+                                                            setMeetingId(e.target.value);
+                                                            if (error) setError('');
+                                                        }}
+                                                        placeholder={t('meeting_id_placeholder')}
+                                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        aria-describedby="meetingId-help"
+                                                        aria-invalid={!isMeetingIdValid}
+                                                    />
+                                                    <p id="meetingId-help" className="mt-1 text-sm text-gray-500">
+                                                        {t('meeting_instructions')}
+                                                        <br />
+                                                        <span className={isMeetingIdValid ? 'text-green-600' : 'text-red-600'}>
+                                                            {t('meeting_id_rules')}
+                                                        </span>
+                                                    </p>
+                                                </div>
 
-                                        <button
-                                            onClick={handleJoinMeeting}
-                                            disabled={isJoinDisabled}
-                                            className={`w-full py-3 px-4 rounded-lg font-medium transition-colors duration-200 ${
-                                                !isJoinDisabled
-                                                    ? 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500'
-                                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                            }`}
-                                            aria-label={t('join_meeting')}
-                                        >
-                                            {t('join_meeting')}
-                                        </button>
-                                        <p className="text-xs text-gray-500 text-center">
-                                            {isJoinDisabled ? t('join_requirements_unmet') : t('join_ready')}
-                                        </p>
+                                                <div>
+                                                    <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-2">
+                                                        {t('user_id')}
+                                                    </label>
+                                                    <input
+                                                        id="userId"
+                                                        type="text"
+                                                        value={userId}
+                                                        onChange={(e) => {
+                                                            setUserId(e.target.value);
+                                                            if (error) setError('');
+                                                        }}
+                                                        placeholder={t('user_id_placeholder')}
+                                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        aria-invalid={!isUserIdValid}
+                                                    />
+                                                    <p className="mt-1 text-sm text-gray-500">
+                                                        <span className={isUserIdValid ? 'text-green-600' : 'text-red-600'}>
+                                                            {t('user_id_rules')}
+                                                        </span>
+                                                    </p>
+                                                </div>
+
+                                                <button
+                                                    onClick={handleJoinMeeting}
+                                                    disabled={isJoinDisabled}
+                                                    className={`w-full py-3 px-4 rounded-lg font-medium transition-colors duration-200 ${
+                                                        !isJoinDisabled
+                                                            ? 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500'
+                                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                    }`}
+                                                    aria-label={t('join_meeting')}
+                                                >
+                                                    {t('join_meeting')}
+                                                </button>
+                                                <p className="text-xs text-gray-500 text-center">
+                                                    {isJoinDisabled ? t('join_requirements_unmet') : t('join_ready')}
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
+
+                                {/* Video Conference Component */}
+                                {user && showVideoConference && (
+                                    <VideoConference
+                                        meetingId={meetingId}
+                                        user={{ ...user, id: userId }}
+                                        onLeave={handleLeaveMeeting}
+                                        fallbackZegoConfig={clientConfig.zego}
+                                    />
+                                )}
                             </div>
                         )}
 
-                        {/* Video Conference Component */}
-                        {user && showVideoConference && (
-                            <VideoConference
-                                meetingId={meetingId}
-                                user={{ ...user, id: userId }}
-                                onLeave={handleLeaveMeeting}
-                                fallbackZegoConfig={clientConfig.zego}
-                            />
-                        )}
-
                         {/* Footer */}
-                        <footer className="mt-8 pt-6 border-t text-center text-sm text-gray-500">
+                        <footer className="mt-10 border-t pt-6 text-center text-sm text-gray-500">
                             <div className="space-x-4 mb-4">
                                 <a href="/terms" className="hover:text-blue-500 transition-colors">
                                     {t('terms')}
