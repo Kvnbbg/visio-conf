@@ -10,32 +10,6 @@ import HealthCheck from './components/HealthCheck';
 import ReadinessPanel from './components/ReadinessPanel';
 import './i18n'; // Initialize i18n
 
-const DEFAULT_ZEGO_CONFIG = {
-    appId: 234470600,
-    serverSecret: 'db9a379cd5f3c8a4268f61a00cdd8600',
-    allowClientFallback: true,
-    defaultMode: 'fallback',
-    options: {
-        turnOnMicrophoneWhenJoining: true,
-        turnOnCameraWhenJoining: true,
-        showMyCameraToggleButton: true,
-        showMyMicrophoneToggleButton: true,
-        showAudioVideoSettingsButton: true,
-        showScreenSharingButton: true,
-        showTextChat: true,
-        showUserList: true,
-        maxUsers: 50,
-        layout: 'Auto',
-        showLayoutButton: true,
-        scenario: {
-            mode: 'VideoConference',
-            config: {
-                role: 'Host'
-            }
-        }
-    }
-};
-
 const App = () => {
     const { t } = useTranslation();
     const [user, setUser] = useState(null);
@@ -46,7 +20,6 @@ const App = () => {
     const [showVideoConference, setShowVideoConference] = useState(false);
     const [restoredPreferences, setRestoredPreferences] = useState(false);
     const [clientConfig, setClientConfig] = useState({
-        zego: DEFAULT_ZEGO_CONFIG,
         demoMode: false,
         franceTravailEnabled: false
     });
@@ -84,15 +57,7 @@ const App = () => {
                 setClientConfig((previous) => ({
                     ...previous,
                     demoMode: Boolean(data.demoMode),
-                    franceTravailEnabled: Boolean(data.franceTravailEnabled),
-                    zego: {
-                        ...previous.zego,
-                        ...(data.zego || {}),
-                        options: {
-                            ...previous.zego.options,
-                            ...(data.zego?.options || {})
-                        }
-                    }
+                    franceTravailEnabled: Boolean(data.franceTravailEnabled)
                 }));
             } catch (configError) {
                 console.warn('Unable to load client config, falling back to defaults', configError);
@@ -379,7 +344,6 @@ const App = () => {
                                         meetingId={meetingId}
                                         user={{ ...user, id: userId }}
                                         onLeave={handleLeaveMeeting}
-                                        fallbackZegoConfig={clientConfig.zego}
                                     />
                                 )}
                             </div>
