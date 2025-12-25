@@ -38,9 +38,17 @@ const {
     validateRequest
 } = require('./lib/middleware');
 const {
+    ensureAuthSchema,
+    getUserByEmail: getSqlUserByEmail,
+    createUser: createSqlUser,
+    recordLogin
+} = require('./lib/simpleSqlAuth');
+const {
     createRedisClient,
     closeRedisConnection
 } = require('./lib/redis');
+const bcrypt = require('bcrypt');
+const { AppError } = require('./lib/errors');
 
 const app = express();
 const SPA_EXCLUDED_PREFIXES = ['/api', '/auth', '/health', '/locales'];
@@ -98,6 +106,7 @@ if (config.sentryDsn) {
 const isProduction = config.isProduction;
 const hasFranceTravailCredentials = config.hasFranceTravailCredentials;
 const isDemoMode = config.demoMode;
+const MIN_PASSWORD_LENGTH = 8;
 
 if (isDemoMode) {
     logger.warn('Application démarrée en mode démonstration. Utilisez DEMO_MODE=false en production.');
@@ -133,6 +142,34 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // CORS configuration
+// Attach simple translation helper for API errors
+app.use((req, res, next) => {
+    const languageHeader = req.headers['accept-language'];
+    const preferred = typeof languageHeader === 'string' && languageHeader.toLowerCase().startsWith('en') ? 'en' : 'fr';
+    const dictionary = {
+        fr: {
+            register_name_required: "Merci d'indiquer votre nom.",
+            register_email_invalid: "Entrez une adresse email valide.",
+            register_password_too_short: "Le mot de passe doit contenir au moins 8 caractères.",
+            register_email_exists: "Un compte existe déjà avec cet email.",
+            login_invalid: "Identifiants invalides. Réessayez.",
+            auth_too_many_attempts: "Trop de tentatives. Veuillez patienter."
+        },
+        en: {
+            register_name_required: 'Please add your name.',
+            register_email_invalid: 'Enter a valid email address.',
+            register_password_too_short: 'Password must be at least 8 characters.',
+            register_email_exists: 'An account with this email already exists.',
+            login_invalid: 'Invalid credentials. Please try again.',
+            auth_too_many_attempts: 'Too many attempts. Please wait a moment.'
+        }
+    };
+
+    req.t = (key) => dictionary[preferred]?.[key] || key;
+    res.setHeader('Content-Language', preferred);
+    next();
+});
+
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) {
@@ -246,6 +283,7 @@ const buildHealthPayload = () => ({
 app.get('/api/config/client', (req, res) => {
     res.json({
         demoMode: isDemoMode,
+        franceTravailEnabled: hasFranceTravailCredentials,
         zego: {
             appId: Number(ZEGOCLOUD_APP_ID) || null,
             allowClientFallback: allowZegoClientFallback,
@@ -300,6 +338,94 @@ app.get('/api/auth/status', (req, res) => {
     }
 
     return res.json({ authenticated: false });
+});
+
+app.post('/api/auth/register', async (req, res, next) => {
+    try {
+        const { name, email, password } = req.body || {};
+        const trimmedName = typeof name === 'string' ? name.trim() : '';
+        const trimmedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+
+        if (!trimmedName) {
+            throw new AppError('register_name_required', { statusCode: 400, code: 'NAME_REQUIRED' });
+        }
+
+        if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+            throw new AppError('register_email_invalid', { statusCode: 400, code: 'EMAIL_INVALID' });
+        }
+
+        if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
+            throw new AppError('register_password_too_short', { statusCode: 400, code: 'PASSWORD_TOO_SHORT' });
+        }
+
+        await ensureAuthSchema();
+        const existingUser = await getSqlUserByEmail(trimmedEmail);
+        if (existingUser) {
+            throw new AppError('register_email_exists', { statusCode: 409, code: 'EMAIL_EXISTS' });
+        }
+
+        const passwordHash = await bcrypt.hash(password, 12);
+        const user = await createSqlUser({
+            name: trimmedName,
+            email: trimmedEmail,
+            passwordHash
+        });
+
+        const sessionUser = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            provider: 'password'
+        };
+
+        req.session.user = sessionUser;
+
+        res.status(201).json({ success: true, user: sessionUser });
+    } catch (error) {
+        if (error.code === 'USER_EXISTS') {
+            return next(new AppError('register_email_exists', { statusCode: 409, code: 'EMAIL_EXISTS' }));
+        }
+        return next(error);
+    }
+});
+
+const authLimiter = createRateLimit(8, 10 * 60 * 1000);
+
+app.post('/api/auth/login', authLimiter, async (req, res, next) => {
+    try {
+        const { email, password } = req.body || {};
+        const trimmedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+
+        if (!trimmedEmail || typeof password !== 'string') {
+            throw new AppError('login_invalid', { statusCode: 401, code: 'INVALID_CREDENTIALS' });
+        }
+
+        await ensureAuthSchema();
+        const user = await getSqlUserByEmail(trimmedEmail);
+        if (!user) {
+            throw new AppError('login_invalid', { statusCode: 401, code: 'INVALID_CREDENTIALS' });
+        }
+
+        const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+        if (!passwordMatch) {
+            throw new AppError('login_invalid', { statusCode: 401, code: 'INVALID_CREDENTIALS' });
+        }
+
+        await recordLogin(user.id);
+
+        const sessionUser = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            provider: 'password'
+        };
+
+        req.session.user = sessionUser;
+
+        res.json({ success: true, user: sessionUser });
+    } catch (error) {
+        return next(error);
+    }
 });
 
 // Initiate France Travail authentication
