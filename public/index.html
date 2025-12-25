@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visio-Conf - Vidéoconférence sécurisée avec France Travail</title>
     <meta name="description" content="Application de vidéoconférence sécurisée intégrée avec l'authentification France Travail">
-    <meta name="keywords" content="vidéoconférence, France Travail, ZEGOCLOUD, OAuth, sécurisé">
+    <meta name="keywords" content="vidéoconférence, France Travail, innovation durable, OAuth, sécurisé">
     <meta name="author" content="TECHANDSTREAM Proprietary License">
 
     <!-- favicon -->
@@ -362,12 +362,12 @@
         }
     </style>
 </head>
-<body class="min-h-screen gradient-bg">
+<body class="min-h-screen bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.35),transparent_45%),radial-gradient(circle_at_20%_20%,rgba(99,102,241,0.4),transparent_55%),#030712] text-slate-100">
     <!-- Loading screen -->
-    <div id="loading-screen" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-lg shadow-lg text-center">
-            <div class="loading-spinner mx-auto mb-4"></div>
-            <p class="text-gray-600">Chargement de l'application...</p>
+    <div id="loading-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70">
+        <div class="rounded-2xl bg-white/95 p-8 text-center shadow-2xl">
+            <div class="mx-auto mb-4 h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-cyan-400"></div>
+            <p class="text-slate-700">Chargement de l'application...</p>
         </div>
     </div>
     
@@ -375,12 +375,12 @@
     <div id="root" class="min-h-screen"></div>
     
     <!-- Error boundary fallback -->
-    <div id="error-fallback" class="hidden fixed inset-0 bg-red-50 flex items-center justify-center">
-        <div class="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
-            <div class="text-red-500 text-6xl mb-4">⚠️</div>
-            <h2 class="text-xl font-bold text-red-800 mb-4">Erreur de l'application</h2>
-            <p class="text-red-600 mb-4">Une erreur inattendue s'est produite. Veuillez recharger la page.</p>
-            <button onclick="window.location.reload()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+    <div id="error-fallback" class="hidden fixed inset-0 flex items-center justify-center bg-red-950/70">
+        <div class="max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl">
+            <div class="mb-4 text-6xl text-red-500">⚠️</div>
+            <h2 class="mb-4 text-xl font-bold text-red-800">Erreur de l'application</h2>
+            <p class="mb-4 text-red-600">Une erreur inattendue s'est produite. Veuillez recharger la page.</p>
+            <button onclick="window.location.reload()" class="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600">
                 Recharger la page
             </button>
         </div>
@@ -393,7 +393,7 @@
             fr: {
                 translation: {
                     "welcome": "Bienvenue sur Visio-Conf",
-                    "description": "Connectez-vous avec France Travail, Google ou vos identifiants TECHANDSTREAM.",
+                    "description": "Connectez-vous avec France Travail, Google ou vos identifiants TECHANDSTREAM, puis activez OxyLayer Growth Mesh pour une croissance durable enrichie en oxygène.",
                     "login_button": "Se connecter avec France Travail",
                     "logout_button": "Se déconnecter",
                     "join_meeting": "Rejoindre la réunion",
@@ -420,7 +420,7 @@
                     "invalid_user_id": "Veuillez saisir un ID utilisateur valide",
                     "login_unavailable": "Configurez France Travail OAuth pour activer ce bouton.",
                     "demo_login_title": "Mode démonstration local",
-                    "demo_login_description": "Lancez instantanément Visio-Conf sans comptes externes pour tester l'interface.",
+                    "demo_login_description": "Lancez instantanément Visio-Conf sans comptes externes pour tester l'interface OxyLayer.",
                     "demo_login_button": "Démarrer une session démo",
                     "error_demo_login": "Impossible de démarrer la session démo",
                     "demo_login_pill_speed": "Prêt en 1 clic",
@@ -491,7 +491,7 @@
             en: {
                 translation: {
                     "welcome": "Welcome to Visio-Conf",
-                    "description": "Sign in with France Travail, Google, or your TECHANDSTREAM credentials.",
+                    "description": "Sign in with France Travail, Google, or your TECHANDSTREAM credentials, then activate OxyLayer Growth Mesh for oxygen-rich sustainable growth.",
                     "login_button": "Sign in with France Travail",
                     "logout_button": "Sign out",
                     "join_meeting": "Join Meeting",
@@ -518,7 +518,7 @@
                     "invalid_user_id": "Please enter a valid user ID",
                     "login_unavailable": "Configure France Travail OAuth to enable this button.",
                     "demo_login_title": "Instant demo mode",
-                    "demo_login_description": "Launch Visio-Conf locally without external accounts to explore the UX.",
+                    "demo_login_description": "Launch Visio-Conf locally without external accounts to explore the OxyLayer experience.",
                     "demo_login_button": "Start demo session",
                     "error_demo_login": "Unable to start the demo session",
                     "demo_login_pill_speed": "Ready in one click",
@@ -653,7 +653,7 @@
             
             return (
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-white text-opacity-80 mb-3">
+                    <label className="mb-3 block text-sm font-medium text-white/80">
                         {i18next.t('language')}
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -663,10 +663,10 @@
                                 type="button"
                                 onClick={() => changeLanguage(lang.code)}
                                 aria-pressed={currentLang === lang.code}
-                                className={`language-button px-3 py-2 text-sm rounded-md border transition-all duration-200 focus-visible ${
+                                className={`rounded-md border px-3 py-2 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80 ${
                                     currentLang === lang.code
-                                        ? 'bg-blue-500/90 text-white border-blue-400 shadow-lg'
-                                        : 'bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-white/40'
+                                        ? 'border-blue-400 bg-blue-500/90 text-white shadow-lg shadow-blue-500/20'
+                                        : 'border-white/20 bg-white/10 text-white hover:border-white/40 hover:bg-white/20'
                                 }`}
                                 aria-label={`Switch to ${lang.name}`}
                             >
@@ -704,21 +704,21 @@
             
             if (loading) {
                 return (
-                    <div className="flex items-center space-x-2 text-sm text-white opacity-75">
-                        <div className="loading-spinner"></div>
-                        <span>{i18next.t('loading')}</span>
-                    </div>
-                );
+                <div className="flex items-center space-x-2 text-sm text-white/75">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-cyan-300"></div>
+                    <span>{i18next.t('loading')}</span>
+                </div>
+            );
             }
             
             const isHealthy = health?.status === 'ok';
             
             return (
                 <div className={`flex items-center space-x-2 text-sm ${
-                    isHealthy ? 'text-green-300' : 'text-red-300'
+                    isHealthy ? 'text-emerald-300' : 'text-rose-300'
                 }`}>
-                    <div className={`w-2 h-2 rounded-full ${
-                        isHealthy ? 'bg-green-400 pulse' : 'bg-red-400'
+                    <div className={`h-2 w-2 rounded-full ${
+                        isHealthy ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
                     }`}></div>
                     <span>
                         {isHealthy ? i18next.t('health_ok') : i18next.t('health_error')}
@@ -733,13 +733,17 @@
         };
 
         const TrustBadges = () => (
-            <div className="trust-badges my-6" role="list" aria-label="Certifications de sécurité">
+            <div className="my-6 flex flex-wrap justify-center gap-3" role="list" aria-label="Certifications de sécurité">
                 {[
                     { icon: '🔐', label: 'Chiffrement AES-256' },
                     { icon: '🛡️', label: 'Conforme RGPD' },
-                    { icon: '🌐', label: 'Infrastructure France Travail' },
+                    { icon: '🌍', label: 'OxyLayer - croissance durable' },
                 ].map((badge) => (
-                    <span key={badge.label} className="trust-badge" role="listitem">
+                    <span
+                        key={badge.label}
+                        className="rounded-full border border-white/25 bg-slate-900/60 px-4 py-2 text-xs font-medium text-white"
+                        role="listitem"
+                    >
                         <span className="mr-1" aria-hidden="true">{badge.icon}</span>
                         {badge.label}
                     </span>
@@ -749,25 +753,29 @@
 
         const FeatureHighlights = () => (
             <section className="mt-10">
-                <h3 className="text-white text-base font-semibold mb-3">Fiabilité immédiate</h3>
-                <div className="feature-grid">
+                <h3 className="mb-3 text-base font-semibold text-white">Fiabilité durable</h3>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {[{
                         icon: '⚡',
                         title: 'Connexion instantanée',
                         text: 'Optimisée pour les réseaux 4G/5G et Wi-Fi d’entreprise.'
                     }, {
-                        icon: '📱',
-                        title: 'Expérience mobile',
-                        text: 'Interface pensée pour les écrans tactiles et la navigation à une main.'
+                        icon: '🌱',
+                        title: 'OxyLayer Growth Mesh',
+                        text: 'Une couche d’oxygénation numérique qui soutient la croissance sans épuiser la planète.'
                     }, {
-                        icon: '🤝',
-                        title: 'Confiance partagée',
-                        text: 'Authentification France Travail et audits de sécurité TECHANDSTREAM.'
+                        icon: '🫧',
+                        title: 'Bouclier atmosphérique',
+                        text: 'Un supplément d’oxygène intégré pour préserver l’équilibre environnemental.'
                     }].map((feature) => (
-                        <article key={feature.title} className="feature-card" aria-label={feature.title}>
+                        <article
+                            key={feature.title}
+                            className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-white"
+                            aria-label={feature.title}
+                        >
                             <div className="text-2xl mb-2" aria-hidden="true">{feature.icon}</div>
                             <p className="font-semibold mb-1">{feature.title}</p>
-                            <p className="text-sm text-white/80 leading-relaxed">{feature.text}</p>
+                            <p className="text-sm leading-relaxed text-white/80">{feature.text}</p>
                         </article>
                     ))}
                 </div>
@@ -1109,16 +1117,16 @@
             ];
 
             return (
-                <main className="page-wrapper">
-                    <div className="content-shell">
-                        <header className="text-center mb-6 fade-in">
-                            <p className="inline-flex items-center justify-center px-4 py-1 rounded-full text-xs tracking-widest font-semibold text-white/80 bg-white/10 border border-white/20 mb-4 uppercase">
+                <main className="flex min-h-screen items-center justify-center px-4 py-10 sm:px-6">
+                    <div className="w-full max-w-5xl">
+                        <header className="mb-8 text-center">
+                            <p className="mb-4 inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-white/80">
                                 TECHANDSTREAM · Confiance numérique
                             </p>
-                            <h1 className="hero-title font-bold mb-3">
+                            <h1 className="mb-3 text-[clamp(2.25rem,4vw,3.25rem)] font-bold tracking-tight text-white">
                                 {i18next.t('welcome')}
                             </h1>
-                            <p className="hero-subtitle max-w-2xl mx-auto text-base md:text-lg">
+                            <p className="mx-auto max-w-2xl text-base text-white/80 md:text-lg">
                                 {i18next.t('description')}
                             </p>
                             <div className="mt-4 flex justify-center">
@@ -1128,7 +1136,7 @@
 
                         <TrustBadges />
 
-                        <div className="glass-effect glass-panel fade-in">
+                        <div className="rounded-[32px] border border-white/10 bg-slate-900/70 p-8 shadow-[0_25px_70px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-10">
                             <LanguageSwitcher />
 
                             <section className="mb-8">
@@ -1156,7 +1164,7 @@
                             </section>
 
                             {error && (
-                                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 text-red-100 rounded-lg fade-in" role="alert" aria-live="assertive">
+                                <div className="mb-6 rounded-lg border border-red-500/50 bg-red-500/10 p-4 text-red-100" role="alert" aria-live="assertive">
                                     <div className="flex items-center">
                                         <span className="mr-2" aria-hidden="true">⚠️</span>
                                         {error}
@@ -1174,13 +1182,13 @@
                             )}
 
                             {loading ? (
-                                <div className="text-center py-8" role="status" aria-live="polite">
-                                    <div className="loading-spinner mx-auto mb-4"></div>
-                                    <p className="text-white text-opacity-70">{i18next.t('loading')}</p>
+                                <div className="py-8 text-center" role="status" aria-live="polite">
+                                    <div className="mx-auto mb-4 h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-cyan-300"></div>
+                                    <p className="text-white/70">{i18next.t('loading')}</p>
                                 </div>
                             ) : user ? (
                                 <div className="space-y-6">
-                                    <div className="p-4 bg-emerald-500/15 border border-emerald-300/40 rounded-xl fade-in">
+                                    <div className="rounded-xl border border-emerald-300/40 bg-emerald-500/15 p-4">
                                         <div className="flex items-center space-x-3">
                                             <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
                                                 {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
@@ -1214,7 +1222,7 @@
                                                             value={meetingId}
                                                             onChange={(e) => setMeetingId(e.target.value)}
                                                             placeholder={i18next.t('meeting_id_placeholder')}
-                                                            className="input-field"
+                                                            className="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
                                                         />
                                                     </div>
 
@@ -1228,7 +1236,7 @@
                                                             value={userId}
                                                             onChange={(e) => setUserId(e.target.value)}
                                                             placeholder={i18next.t('user_id_placeholder')}
-                                                            className="input-field"
+                                                            className="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
                                                         />
                                                     </div>
 
@@ -1279,12 +1287,12 @@
                                                 </button>
                                             </div>
 
-                                            <div className="video-container h-64 flex items-center justify-center">
-                                                <div className="text-white text-center">
-                                                    <div className="text-4xl mb-2" aria-hidden="true">📹</div>
+                                            <div className="flex h-64 items-center justify-center rounded-xl bg-black/80">
+                                                <div className="text-center text-white">
+                                                    <div className="mb-2 text-4xl" aria-hidden="true">📹</div>
                                                     <p>Zone de vidéoconférence</p>
-                                                    <p className="text-sm text-gray-300">
-                                                        Les flux vidéo ZEGOCLOUD apparaîtraient ici
+                                                    <p className="text-sm text-white/70">
+                                                        Les flux OxyLayer apparaîtront ici
                                                     </p>
                                                 </div>
                                             </div>
@@ -1382,7 +1390,7 @@
                                                         type="text"
                                                         value={fullName}
                                                         onChange={(e) => setFullName(e.target.value)}
-                                                        className="input-field"
+                                                        className="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
                                                     />
                                                 </div>
                                             )}
@@ -1391,28 +1399,28 @@
                                                 <label htmlFor="email" className="block text-sm font-medium text-white text-opacity-80 mb-2">
                                                     {i18next.t('email_label')}
                                                 </label>
-                                                <input
-                                                    id="email"
-                                                    type="email"
-                                                    value={email}
-                                                    onChange={(e) => setEmail(e.target.value)}
-                                                    className="input-field"
-                                                    required
-                                                />
+                                                    <input
+                                                        id="email"
+                                                        type="email"
+                                                        value={email}
+                                                        onChange={(e) => setEmail(e.target.value)}
+                                                        className="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+                                                        required
+                                                    />
                                             </div>
 
                                             <div>
                                                 <label htmlFor="password" className="block text-sm font-medium text-white text-opacity-80 mb-2">
                                                     {i18next.t('password_label')}
                                                 </label>
-                                                <input
-                                                    id="password"
-                                                    type="password"
-                                                    value={password}
-                                                    onChange={(e) => setPassword(e.target.value)}
-                                                    className="input-field"
-                                                    required
-                                                />
+                                                    <input
+                                                        id="password"
+                                                        type="password"
+                                                        value={password}
+                                                        onChange={(e) => setPassword(e.target.value)}
+                                                        className="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+                                                        required
+                                                    />
                                             </div>
 
                                             {isRegisterMode && (
@@ -1425,7 +1433,7 @@
                                                         type="password"
                                                         value={confirmPassword}
                                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                                        className="input-field"
+                                                        className="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
                                                         required
                                                     />
                                                 </div>
@@ -1449,24 +1457,34 @@
                                     </div>
 
                                     {showDemoCta && (
-                                        <div className={`demo-card ${isDemoCardOpen ? 'open' : ''}`} data-state={isDemoCardOpen ? 'open' : 'closed'}>
+                                        <div
+                                            className={`overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-blue-500/10 to-emerald-500/10 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:shadow-[0_18px_45px_rgba(15,23,42,0.45)] ${
+                                                isDemoCardOpen ? 'border-emerald-400/40 shadow-[0_25px_65px_rgba(5,150,105,0.35)]' : ''
+                                            }`}
+                                            data-state={isDemoCardOpen ? 'open' : 'closed'}
+                                        >
                                             <button
                                                 type="button"
                                                 onClick={toggleDemoCard}
-                                                className="demo-card-header focus-visible"
+                                                className="flex w-full items-center justify-between border-none bg-transparent px-6 py-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80"
                                                 aria-expanded={isDemoCardOpen}
                                                 aria-controls="demo-session-panel"
                                             >
-                                                <div className="demo-card-title">
+                                                <div className="flex items-center gap-3 text-base font-semibold text-white">
                                                     <span className="text-3xl" aria-hidden="true">⚡</span>
                                                     <div>
                                                         <p>{i18next.t('demo_login_title')}</p>
-                                                        <p className="text-white text-opacity-80 text-sm hidden sm:block">
+                                                        <p className="hidden text-sm text-white/80 sm:block">
                                                             {i18next.t('demo_login_description')}
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <div className="demo-card-toggle" aria-hidden="true">
+                                                <div
+                                                    className={`flex h-8 w-8 items-center justify-center rounded-full bg-white/15 transition-all ${
+                                                        isDemoCardOpen ? 'rotate-180 bg-cyan-400/30' : ''
+                                                    }`}
+                                                    aria-hidden="true"
+                                                >
                                                     <svg className="w-4 h-4 text-white/80" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                         <path d="M5 8l5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                                                     </svg>
@@ -1474,36 +1492,38 @@
                                             </button>
                                             <div
                                                 id="demo-session-panel"
-                                                className="demo-card-content"
+                                                className={`overflow-hidden px-6 transition-all duration-300 ${
+                                                    isDemoCardOpen ? 'max-h-[480px] opacity-100 pb-6 pt-2' : 'max-h-0 opacity-0'
+                                                }`}
                                                 aria-hidden={!isDemoCardOpen}
                                             >
-                                                <p className="text-white text-opacity-80 text-sm mb-4 sm:hidden">
+                                                <p className="mb-4 text-sm text-white/80 sm:hidden">
                                                     {i18next.t('demo_login_description')}
                                                 </p>
                                                 <div className="flex flex-wrap gap-2 mb-4">
-                                                    <span className="demo-pill">
+                                                    <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-white">
                                                         <span aria-hidden="true">🚀</span>
                                                         {i18next.t('demo_login_pill_speed')}
                                                     </span>
-                                                    <span className="demo-pill">
+                                                    <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-white">
                                                         <span aria-hidden="true">🛡️</span>
                                                         {i18next.t('demo_login_pill_safe')}
                                                     </span>
-                                                    <span className="demo-pill">
+                                                    <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-white">
                                                         <span aria-hidden="true">🎨</span>
                                                         {i18next.t('demo_login_pill_motion')}
                                                     </span>
                                                 </div>
-                                                <div className="demo-feature-list mb-5">
-                                                    <div className="demo-feature-item">
+                                                <div className="mb-5 grid gap-3">
+                                                    <div className="flex items-center gap-3 text-sm text-white/80">
                                                         <span className="text-lg" aria-hidden="true">🪄</span>
                                                         <p>{i18next.t('demo_login_feature_transitions')}</p>
                                                     </div>
-                                                    <div className="demo-feature-item">
+                                                    <div className="flex items-center gap-3 text-sm text-white/80">
                                                         <span className="text-lg" aria-hidden="true">🛰️</span>
                                                         <p>{i18next.t('demo_login_feature_tokens')}</p>
                                                     </div>
-                                                    <div className="demo-feature-item">
+                                                    <div className="flex items-center gap-3 text-sm text-white/80">
                                                         <span className="text-lg" aria-hidden="true">🤝</span>
                                                         <p>{i18next.t('demo_login_feature_accessibility')}</p>
                                                     </div>
