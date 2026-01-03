@@ -131,6 +131,7 @@ visio-conf/
 - Replace `SESSION_SECRET` and ZEGOCLOUD secrets in production.
 - Keep `.env` and `.secrets` out of source control.
 - Demo mode is for local/testing only; disable it in production.
+- OWASP-aligned pentest checklist: see [`docs/owasp-top-20-mistakes.md`](docs/owasp-top-20-mistakes.md).
 
 ## Contributing
 

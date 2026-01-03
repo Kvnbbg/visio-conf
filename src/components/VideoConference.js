@@ -32,6 +32,9 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    window.dispatchEvent(new CustomEvent('unauthorized', { detail: { status: 401 } }));
+                }
                 throw new Error('Failed to generate token');
             }
 
