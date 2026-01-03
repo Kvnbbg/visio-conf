@@ -98,6 +98,9 @@ const App = () => {
                 setMeetingId('');
                 setUserId('');
                 setError('');
+                localStorage.removeItem('lastMeetingId');
+                localStorage.removeItem('lastUserId');
+                setRestoredPreferences(false);
             } else {
                 throw new Error('Logout failed');
             }
@@ -141,10 +144,16 @@ const App = () => {
 
     const refreshToken = async () => {
         try {
-            const response = await fetch('/api/auth/refresh');
-            const data = await response.json();
-            
-            if (data.success) {
+            const response = await fetch('/api/auth/refresh', { method: 'POST' });
+            let data = null;
+
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                data = null;
+            }
+
+            if (response.ok && data?.success) {
                 // Token refreshed successfully
                 console.log('Token refreshed');
             } else {
