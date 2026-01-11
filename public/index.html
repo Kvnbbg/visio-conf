@@ -110,6 +110,50 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .ambient-orb {
+            position: absolute;
+            border-radius: 9999px;
+            filter: blur(0px);
+            opacity: 0.45;
+            animation: float 12s ease-in-out infinite, glow 8s ease-in-out infinite;
+        }
+
+        .ambient-orb.orb-1 {
+            width: 180px;
+            height: 180px;
+            top: -40px;
+            left: -60px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.7), transparent 70%);
+        }
+
+        .ambient-orb.orb-2 {
+            width: 140px;
+            height: 140px;
+            bottom: -20px;
+            right: -30px;
+            animation-delay: 1.5s;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.7), transparent 70%);
+        }
+
+        .ambient-orb.orb-3 {
+            width: 120px;
+            height: 120px;
+            top: 40%;
+            right: -60px;
+            animation-delay: 2.2s;
+            background: radial-gradient(circle, rgba(34, 211, 238, 0.65), transparent 70%);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            50% { transform: translate3d(0, -12px, 0); }
+        }
+
+        @keyframes glow {
+            0%, 100% { opacity: 0.35; }
+            50% { opacity: 0.7; }
+        }
         
         .fade-in {
             animation: fadeIn 0.5s ease-in;
@@ -209,6 +253,42 @@
             background: rgba(15, 23, 42, 0.55);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--text-strong);
+        }
+
+        .interactive-card {
+            transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+        }
+
+        .interactive-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
+            border-color: rgba(34, 211, 238, 0.35);
+        }
+
+        .interactive-card.active {
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 22px 45px rgba(16, 185, 129, 0.25);
+        }
+
+        .shine-border {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shine-border::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+            transform: translateX(-100%);
+            animation: shine 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shine {
+            0%, 30% { transform: translateX(-100%); opacity: 0; }
+            45% { opacity: 1; }
+            70%, 100% { transform: translateX(100%); opacity: 0; }
         }
 
         .resource-grid {
@@ -365,9 +445,9 @@
 <body class="min-h-screen bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.35),transparent_45%),radial-gradient(circle_at_20%_20%,rgba(99,102,241,0.4),transparent_55%),#030712] text-slate-100">
     <!-- Loading screen -->
     <div id="loading-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70">
-        <div class="rounded-2xl bg-white/95 p-8 text-center shadow-2xl">
-            <div class="mx-auto mb-4 h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-cyan-400"></div>
-            <p class="text-slate-700">Chargement de l'application...</p>
+        <div class="rounded-2xl border border-white/10 bg-slate-900/90 p-8 text-center shadow-2xl backdrop-blur">
+            <div class="mx-auto mb-4 h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-cyan-300"></div>
+            <p class="text-white/80">Chargement de l'application...</p>
         </div>
     </div>
     
@@ -480,6 +560,25 @@
                     "resource_jaas_title": "Jitsi-as-a-Service + Vercel",
                     "resource_jaas_desc": "Expérience type Zoom via Jitsi et serverless.",
                     "resource_cta": "Voir le projet",
+                    "experience_title": "Parcours interactif",
+                    "experience_subtitle": "Sélectionnez un mode pour adapter les animations et le rythme des échanges.",
+                    "experience_modes_focus_title": "Focus coaching",
+                    "experience_modes_focus_desc": "Transitions douces pour les entretiens individuels.",
+                    "experience_modes_workshop_title": "Atelier collaboratif",
+                    "experience_modes_workshop_desc": "Interactions dynamiques pour les équipes réparties.",
+                    "experience_modes_webinar_title": "Webinaire sécurisé",
+                    "experience_modes_webinar_desc": "Affichage stable pour les sessions à grande audience.",
+                    "experience_selected_label": "Mode actif",
+                    "experience_action_primary": "Préparer la session",
+                    "experience_action_secondary": "Partager le brief",
+                    "readiness_title": "Pré-vol OxyLayer",
+                    "readiness_subtitle": "Activez chaque étape pour simuler l'état du matériel.",
+                    "readiness_microphone": "Microphone sécurisé",
+                    "readiness_camera": "Caméra HD prête",
+                    "readiness_network": "Réseau stabilisé",
+                    "readiness_secure_link": "Lien privé généré",
+                    "readiness_ready": "Tout est prêt pour rejoindre",
+                    "readiness_pending": "En attente d'une validation",
                     "social_follow_label": "Restez connectés",
                     "footer_signature": "© 2024 @techandstream · Kevin Marville",
                     "rights_reserved": "Tous droits réservés.",
@@ -578,6 +677,25 @@
                     "resource_jaas_title": "Jitsi-as-a-Service + Vercel",
                     "resource_jaas_desc": "Zoom-like UX powered by Jitsi + serverless.",
                     "resource_cta": "View project",
+                    "experience_title": "Interactive journey",
+                    "experience_subtitle": "Pick a mode to adapt the pacing and animations.",
+                    "experience_modes_focus_title": "Focus coaching",
+                    "experience_modes_focus_desc": "Soft transitions for one-on-one sessions.",
+                    "experience_modes_workshop_title": "Collaborative workshop",
+                    "experience_modes_workshop_desc": "Dynamic interactions for distributed teams.",
+                    "experience_modes_webinar_title": "Secure webinar",
+                    "experience_modes_webinar_desc": "Stable display for large-audience sessions.",
+                    "experience_selected_label": "Active mode",
+                    "experience_action_primary": "Prepare session",
+                    "experience_action_secondary": "Share brief",
+                    "readiness_title": "OxyLayer pre-flight",
+                    "readiness_subtitle": "Toggle each step to simulate hardware readiness.",
+                    "readiness_microphone": "Secure microphone",
+                    "readiness_camera": "HD camera ready",
+                    "readiness_network": "Stabilized network",
+                    "readiness_secure_link": "Private link generated",
+                    "readiness_ready": "Ready to join",
+                    "readiness_pending": "Waiting for confirmation",
                     "social_follow_label": "Stay connected",
                     "footer_signature": "© 2024 @techandstream · Kevin Marville",
                     "rights_reserved": "All rights reserved.",
@@ -593,6 +711,7 @@
     <!-- Main React Application -->
     <script type="text/babel">
         const { useState, useEffect } = React;
+        const classNames = (...classes) => classes.filter(Boolean).join(' ');
         
         // Error Boundary Component
         class ErrorBoundary extends React.Component {
@@ -839,6 +958,149 @@
             );
         };
 
+        const ExperienceModes = () => {
+            const [activeMode, setActiveMode] = useState('focus');
+            const modes = [
+                {
+                    key: 'focus',
+                    icon: '🎧',
+                    title: i18next.t('experience_modes_focus_title'),
+                    description: i18next.t('experience_modes_focus_desc'),
+                    accent: 'from-cyan-400/20 to-blue-500/20'
+                },
+                {
+                    key: 'workshop',
+                    icon: '🧩',
+                    title: i18next.t('experience_modes_workshop_title'),
+                    description: i18next.t('experience_modes_workshop_desc'),
+                    accent: 'from-emerald-400/20 to-cyan-500/20'
+                },
+                {
+                    key: 'webinar',
+                    icon: '🛰️',
+                    title: i18next.t('experience_modes_webinar_title'),
+                    description: i18next.t('experience_modes_webinar_desc'),
+                    accent: 'from-indigo-400/20 to-purple-500/20'
+                }
+            ];
+
+            const selectedMode = modes.find((mode) => mode.key === activeMode);
+
+            return (
+                <section className="mt-10">
+                    <div className="mb-4 text-center">
+                        <h3 className="text-base font-semibold text-white">{i18next.t('experience_title')}</h3>
+                        <p className="text-sm text-white/70">{i18next.t('experience_subtitle')}</p>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-3">
+                        {modes.map((mode) => (
+                            <button
+                                key={mode.key}
+                                type="button"
+                                onClick={() => setActiveMode(mode.key)}
+                                className={classNames(
+                                    'interactive-card text-left rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80',
+                                    activeMode === mode.key && 'active'
+                                )}
+                                aria-pressed={activeMode === mode.key}
+                            >
+                                <div className="mb-3 flex items-center gap-3">
+                                    <span className="text-2xl" aria-hidden="true">{mode.icon}</span>
+                                    <span className="font-semibold">{mode.title}</span>
+                                </div>
+                                <p className="text-sm text-white/70">{mode.description}</p>
+                            </button>
+                        ))}
+                    </div>
+                    <div className={classNames(
+                        'mt-4 rounded-2xl border border-white/10 bg-gradient-to-br p-4 text-white',
+                        selectedMode?.accent
+                    )}>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <p className="text-xs uppercase tracking-[0.2em] text-white/60">{i18next.t('experience_selected_label')}</p>
+                                <p className="text-lg font-semibold">{selectedMode?.title}</p>
+                                <p className="text-sm text-white/70">{selectedMode?.description}</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                <button className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-colors">
+                                    {i18next.t('experience_action_primary')}
+                                </button>
+                                <button className="rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white/80 hover:text-white hover:border-white/40 transition-colors">
+                                    {i18next.t('experience_action_secondary')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        const ReadinessChecklist = () => {
+            const [checks, setChecks] = useState({
+                microphone: true,
+                camera: false,
+                network: true,
+                link: false
+            });
+
+            const toggleCheck = (key) => {
+                setChecks((prev) => ({ ...prev, [key]: !prev[key] }));
+            };
+
+            const allReady = Object.values(checks).every(Boolean);
+            const items = [
+                { key: 'microphone', label: i18next.t('readiness_microphone') },
+                { key: 'camera', label: i18next.t('readiness_camera') },
+                { key: 'network', label: i18next.t('readiness_network') },
+                { key: 'link', label: i18next.t('readiness_secure_link') }
+            ];
+
+            return (
+                <section className="mt-10">
+                    <div className="mb-4 text-center">
+                        <h3 className="text-base font-semibold text-white">{i18next.t('readiness_title')}</h3>
+                        <p className="text-sm text-white/70">{i18next.t('readiness_subtitle')}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            {items.map((item) => (
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    onClick={() => toggleCheck(item.key)}
+                                    className={classNames(
+                                        'interactive-card flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left text-white',
+                                        checks[item.key] && 'active'
+                                    )}
+                                    role="switch"
+                                    aria-checked={checks[item.key]}
+                                >
+                                    <span className="text-sm font-medium">{item.label}</span>
+                                    <span className={classNames(
+                                        'rounded-full px-3 py-1 text-xs font-semibold',
+                                        checks[item.key]
+                                            ? 'bg-emerald-500/20 text-emerald-200'
+                                            : 'bg-amber-500/20 text-amber-200'
+                                    )}>
+                                        {checks[item.key] ? 'ON' : 'OFF'}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                        <div className={classNames(
+                            'mt-4 rounded-xl border px-4 py-3 text-sm font-semibold',
+                            allReady
+                                ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200'
+                                : 'border-amber-400/40 bg-amber-500/15 text-amber-200'
+                        )}>
+                            {allReady ? i18next.t('readiness_ready') : i18next.t('readiness_pending')}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
         // Main App Component
         const App = () => {
             const [user, setUser] = useState(null);
@@ -856,6 +1118,8 @@
             const [confirmPassword, setConfirmPassword] = useState('');
             const [fullName, setFullName] = useState('');
             const [isDemoCardOpen, setIsDemoCardOpen] = useState(true);
+            const inputClassName = 'w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40';
+            const primaryActionClass = 'w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200';
             
             useEffect(() => {
                 loadConfig();
@@ -1136,8 +1400,14 @@
 
                         <TrustBadges />
 
-                        <div className="rounded-[32px] border border-white/10 bg-slate-900/70 p-8 shadow-[0_25px_70px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-10">
-                            <LanguageSwitcher />
+                        <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/70 p-8 shadow-[0_25px_70px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-10 shine-border">
+                            <div className="pointer-events-none absolute inset-0">
+                                <div className="ambient-orb orb-1"></div>
+                                <div className="ambient-orb orb-2"></div>
+                                <div className="ambient-orb orb-3"></div>
+                            </div>
+                            <div className="relative z-10">
+                                <LanguageSwitcher />
 
                             <section className="mb-8">
                                 <div className="flex items-center justify-between mb-3">
@@ -1222,7 +1492,7 @@
                                                             value={meetingId}
                                                             onChange={(e) => setMeetingId(e.target.value)}
                                                             placeholder={i18next.t('meeting_id_placeholder')}
-                                                            className="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+                                                            className={inputClassName}
                                                         />
                                                     </div>
 
@@ -1236,18 +1506,19 @@
                                                             value={userId}
                                                             onChange={(e) => setUserId(e.target.value)}
                                                             placeholder={i18next.t('user_id_placeholder')}
-                                                            className="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+                                                            className={inputClassName}
                                                         />
                                                     </div>
 
                                                     <button
                                                         onClick={handleJoinMeeting}
                                                         disabled={!meetingId.trim() || !userId.trim()}
-                                                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                                                        className={classNames(
+                                                            primaryActionClass,
                                                             meetingId.trim() && userId.trim()
                                                                 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 text-white hover:shadow-lg hover:-translate-y-0.5'
                                                                 : 'bg-white/5 text-white/40 cursor-not-allowed'
-                                                        }`}
+                                                        )}
                                                     >
                                                         {i18next.t('join_meeting')}
                                                     </button>
@@ -1255,11 +1526,12 @@
                                                     <button
                                                         onClick={handleCopyInviteLink}
                                                         disabled={!meetingId.trim()}
-                                                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                                                        className={classNames(
+                                                            primaryActionClass,
                                                             meetingId.trim()
                                                                 ? 'bg-white/10 text-white hover:bg-white/20'
                                                                 : 'bg-white/5 text-white/40 cursor-not-allowed'
-                                                        }`}
+                                                        )}
                                                     >
                                                         {i18next.t('invite_link_button')}
                                                     </button>
@@ -1268,7 +1540,10 @@
 
                                             <button
                                                 onClick={handleLogout}
-                                                className="w-full py-3 px-4 bg-red-500/80 text-white rounded-xl font-medium hover:bg-red-500 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+                                                className={classNames(
+                                                    primaryActionClass,
+                                                    'bg-red-500/80 text-white font-medium hover:bg-red-500 hover:shadow-lg hover:-translate-y-0.5'
+                                                )}
                                             >
                                                 {i18next.t('logout_button')}
                                             </button>
@@ -1390,7 +1665,7 @@
                                                         type="text"
                                                         value={fullName}
                                                         onChange={(e) => setFullName(e.target.value)}
-                                                        className="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+                                                        className={inputClassName}
                                                     />
                                                 </div>
                                             )}
@@ -1404,7 +1679,7 @@
                                                         type="email"
                                                         value={email}
                                                         onChange={(e) => setEmail(e.target.value)}
-                                                        className="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+                                                        className={inputClassName}
                                                         required
                                                     />
                                             </div>
@@ -1418,7 +1693,7 @@
                                                         type="password"
                                                         value={password}
                                                         onChange={(e) => setPassword(e.target.value)}
-                                                        className="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+                                                        className={inputClassName}
                                                         required
                                                     />
                                             </div>
@@ -1433,7 +1708,7 @@
                                                         type="password"
                                                         value={confirmPassword}
                                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                                        className="w-full rounded-xl border border-white/20 bg-slate-900/60 px-4 py-3 text-white placeholder:text-white/50 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
+                                                        className={inputClassName}
                                                         required
                                                     />
                                                 </div>
@@ -1441,7 +1716,10 @@
 
                                             <button
                                                 type="submit"
-                                                className="w-full py-3 px-4 rounded-xl font-semibold bg-gradient-to-r from-emerald-400 to-emerald-500 text-white hover:shadow-lg hover:-translate-y-0.5 transition-all"
+                                                className={classNames(
+                                                    primaryActionClass,
+                                                    'bg-gradient-to-r from-emerald-400 to-emerald-500 text-white hover:shadow-lg hover:-translate-y-0.5'
+                                                )}
                                             >
                                                 {isRegisterMode ? i18next.t('register_button') : i18next.t('email_login_button')}
                                             </button>
@@ -1531,11 +1809,12 @@
                                                 <button
                                                     onClick={handleDemoLogin}
                                                     disabled={demoLoading}
-                                                    className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                                                    className={classNames(
+                                                        primaryActionClass,
                                                         demoLoading
-                                                            ? ' bg-white/10 text-white/50 cursor-wait'
-                                                            : ' bg-gradient-to-r from-emerald-400 via-sky-400 to-blue-500 text-white shadow-lg hover:shadow-2xl hover:-translate-y-0.5'
-                                                    }`}
+                                                            ? 'bg-white/10 text-white/50 cursor-wait'
+                                                            : 'bg-gradient-to-r from-emerald-400 via-sky-400 to-blue-500 text-white shadow-lg hover:shadow-2xl hover:-translate-y-0.5'
+                                                    )}
                                                 >
                                                     {demoLoading ? i18next.t('loading') : i18next.t('demo_login_button')}
                                                 </button>
@@ -1548,10 +1827,12 @@
                                 </div>
                             )}
 
-                            <FeatureHighlights />
-                            <ResourceHighlights />
+                                <FeatureHighlights />
+                                <ExperienceModes />
+                                <ReadinessChecklist />
+                                <ResourceHighlights />
 
-                            <footer className="mt-10 pt-6 border-t border-white/10 text-center text-sm text-white/80">
+                                <footer className="mt-10 pt-6 border-t border-white/10 text-center text-sm text-white/80">
                                 <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
                                     <a href="/terms" className="hover:text-blue-200 transition-colors">
                                         {i18next.t('terms')}
@@ -1586,7 +1867,8 @@
                                     </div>
                                 </div>
                                 <p className="mt-4 text-white/50">{i18next.t('version')}</p>
-                            </footer>
+                                </footer>
+                            </div>
                         </div>
                     </div>
                 </main>
