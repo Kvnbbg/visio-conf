@@ -32,7 +32,9 @@
     "docker:dev": "docker-compose -f docker-compose.development.yml up -d",
     "docker:prod": "docker-compose -f docker-compose.production.yml up -d",
     "k8s:deploy": "kubectl apply -k kubernetes/base/",
-    "k8s:status": "kubectl get pods -l app=visio-conf"
+    "k8s:status": "kubectl get pods -l app=visio-conf",
+    "vercel:deploy": "vercel --prod",
+    "vercel:preview": "vercel"
   },
   "keywords": [
     "video-conferencing",
