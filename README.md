@@ -115,6 +115,7 @@ visio-conf/
 ├── lib/                    # Auth, config, middleware, logging, Redis
 ├── tests/                  # Jest test suite
 ├── .env.example            # Example environment configuration
+├── CLAUDE.md               # Project context for agentic workflows
 ```
 
 > Note: `src/` contains older React components and is not wired to a build step yet. The production UI is served from `public/index.html`.
@@ -125,6 +126,10 @@ visio-conf/
 - **Sessions reset on refresh:** configure `REDIS_URL` in production so sessions persist across instances.
 - **OAuth callback errors:** verify `FRANCETRAVAIL_REDIRECT_URI` matches the route `/auth/francetravail/callback`.
 - **Health check fails:** ensure `npm start` is running and use `/api/health` (or `/health`).
+
+## Vercel deployment (easy deploy)
+
+Use the Vercel CLI or dashboard to deploy; `vercel.json` already wires the Node serverless function and static assets. See the step-by-step guide in [`docs/vercel-deploy.md`](docs/vercel-deploy.md).
 
 ## Security notes
 
