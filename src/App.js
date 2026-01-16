@@ -184,6 +184,17 @@ const App = () => {
     const isUserIdValid = /^[\w-]{2,50}$/.test(userId.trim());
     const isJoinDisabled = !isMeetingIdValid || !userId || !isUserIdValid;
 
+    const footerLinks = [
+        { href: '/terms', label: t('terms') },
+        { href: '/privacy', label: t('privacy') },
+        { href: '/about', label: t('about') }
+    ];
+
+    const backgroundStyle = {
+        backgroundImage:
+            'radial-gradient(circle at top left, rgba(99,102,241,0.35), transparent 45%), radial-gradient(circle at 20% 20%, rgba(14,116,144,0.25), transparent 50%), radial-gradient(circle at bottom right, rgba(168,85,247,0.4), transparent 45%)'
+    };
+
     const handleGetStarted = () => {
         setActivePage('conference');
         setAuthMode('register');
@@ -198,21 +209,26 @@ const App = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600">
-            <div className="container mx-auto px-4 py-8">
+        <div className="min-h-screen bg-slate-950 text-slate-900" style={backgroundStyle}>
+            <div className="container mx-auto px-4 py-10">
                 {/* Header */}
-                <header className="mb-8 space-y-4">
+                <header className="mb-10 space-y-6 rounded-3xl border border-white/15 bg-white/10 px-6 py-8 text-white shadow-[0_20px_60px_-35px_rgba(15,23,42,0.8)] backdrop-blur-xl">
                     <div className="flex flex-col items-center gap-4 text-center">
-                        <h1 className="text-4xl font-bold text-white mb-2">
+                        <h1 className="text-4xl font-bold text-white sm:text-5xl">
                             {t('welcome')}
                         </h1>
+                        <p className="max-w-2xl text-sm text-white/80 sm:text-base">
+                            {t('landing_subtitle')}
+                        </p>
                         <div className="flex flex-wrap items-center justify-center gap-4">
                             <HealthCheck />
                             <LanguageSwitcher />
                         </div>
                     </div>
                     <div className="flex justify-center">
-                        <PageTabs activePage={activePage} onChange={setActivePage} />
+                        <div className="rounded-full bg-white/10 px-4 py-2 shadow-lg shadow-black/10">
+                            <PageTabs activePage={activePage} onChange={setActivePage} />
+                        </div>
                     </div>
                 </header>
 
@@ -225,12 +241,12 @@ const App = () => {
                 )}
 
                 {/* Main Content */}
-                <div className="mx-auto max-w-4xl">
-                    <div className="rounded-3xl bg-white p-8 shadow-2xl">
+                <div className="mx-auto max-w-5xl">
+                    <div className="rounded-[32px] border border-white/60 bg-white/90 p-8 shadow-[0_40px_80px_-50px_rgba(15,23,42,0.7)] backdrop-blur">
                         {/* Error Display */}
                         {error && (
                             <div
-                                className="mb-6 rounded-lg border border-red-400 bg-red-100 p-4 text-red-700"
+                                className="mb-6 rounded-lg border border-red-400 bg-red-100 p-4 text-red-700 shadow-sm"
                                 role="alert"
                                 aria-live="assertive"
                             >
@@ -360,18 +376,15 @@ const App = () => {
 
                         {/* Footer */}
                         <footer className="mt-10 border-t pt-6 text-center text-sm text-gray-500">
-                            <div className="space-x-4 mb-4">
-                                <a href="/terms" className="hover:text-blue-500 transition-colors">
-                                    {t('terms')}
-                                </a>
-                                <span>|</span>
-                                <a href="/privacy" className="hover:text-blue-500 transition-colors">
-                                    {t('privacy')}
-                                </a>
-                                <span>|</span>
-                                <a href="/about" className="hover:text-blue-500 transition-colors">
-                                    {t('about')}
-                                </a>
+                            <div className="flex flex-wrap items-center justify-center gap-3">
+                                {footerLinks.map((link, index) => (
+                                    <React.Fragment key={link.href}>
+                                        <a href={link.href} className="hover:text-blue-600 transition-colors">
+                                            {link.label}
+                                        </a>
+                                        {index !== footerLinks.length - 1 && <span className="text-gray-300">|</span>}
+                                    </React.Fragment>
+                                ))}
                             </div>
                             <p>{t('powered_by')}</p>
                             <p className="mt-1">{t('version')}</p>
