@@ -8,8 +8,32 @@ import PageTabs from './components/PageTabs';
 import VideoConference from './components/VideoConference';
 import HealthCheck from './components/HealthCheck';
 import ReadinessPanel from './components/ReadinessPanel';
-import './i18n'; // Initialize i18n
+import './i18n';
 
+const MEETING_ID_PATTERN = /^[\w-]{3,50}$/;
+const USER_ID_PATTERN = /^[\w-]{2,50}$/;
+const STORAGE_KEYS = {
+    meetingId: 'lastMeetingId',
+    userId: 'lastUserId'
+};
+const PAGES = {
+    landing: 'landing',
+    index: 'index',
+    conference: 'conference'
+};
+const logger = {
+    error: (message, error) => {
+        console.error(message, error);
+    },
+    warn: (message, error) => {
+        console.warn(message, error);
+    }
+};
+
+/**
+ * Renders the main Visio-Conf application shell and handles session state.
+ * @returns {JSX.Element} The application layout.
+ */
 const App = () => {
     const { t } = useTranslation();
     const [user, setUser] = useState(null);
@@ -23,7 +47,7 @@ const App = () => {
         demoMode: false,
         franceTravailEnabled: false
     });
-    const [activePage, setActivePage] = useState('landing');
+    const [activePage, setActivePage] = useState(PAGES.landing);
     const [authMode, setAuthMode] = useState('register');
 
     useEffect(() => {
@@ -31,8 +55,8 @@ const App = () => {
     }, []);
 
     useEffect(() => {
-        const savedMeetingId = localStorage.getItem('lastMeetingId');
-        const savedUserId = localStorage.getItem('lastUserId');
+        const savedMeetingId = localStorage.getItem(STORAGE_KEYS.meetingId);
+        const savedUserId = localStorage.getItem(STORAGE_KEYS.userId);
 
         if (savedMeetingId) {
             setMeetingId(savedMeetingId);
@@ -53,14 +77,14 @@ const App = () => {
                 if (!response.ok) {
                     throw new Error('Failed to fetch client config');
                 }
-                const data = await response.json();
+                const configData = await response.json();
                 setClientConfig((previous) => ({
                     ...previous,
-                    demoMode: Boolean(data.demoMode),
-                    franceTravailEnabled: Boolean(data.franceTravailEnabled)
+                    demoMode: Boolean(configData?.demoMode),
+                    franceTravailEnabled: Boolean(configData?.franceTravailEnabled)
                 }));
             } catch (configError) {
-                console.warn('Unable to load client config, falling back to defaults', configError);
+                logger.warn('Unable to load client config, falling back to defaults', configError);
             }
         };
 
@@ -70,14 +94,17 @@ const App = () => {
     const checkAuthStatus = async () => {
         try {
             const response = await fetch('/api/auth/status');
-            const data = await response.json();
-            
-            if (data.authenticated) {
-                setUser(data.user);
-                setUserId(data.user.id || data.user.name || 'user');
+            if (!response.ok) {
+                throw new Error(`Auth status failed with ${response.status}`);
+            }
+            const authStatus = await response.json();
+
+            if (authStatus?.authenticated) {
+                setUser(authStatus.user);
+                setUserId(authStatus.user?.id || authStatus.user?.name || 'user');
             }
         } catch (err) {
-            console.error('Error checking auth status:', err);
+            logger.error('Error checking auth status:', err);
             setError(t('error_status'));
         } finally {
             setLoading(false);
@@ -98,14 +125,14 @@ const App = () => {
                 setMeetingId('');
                 setUserId('');
                 setError('');
-                localStorage.removeItem('lastMeetingId');
-                localStorage.removeItem('lastUserId');
+                localStorage.removeItem(STORAGE_KEYS.meetingId);
+                localStorage.removeItem(STORAGE_KEYS.userId);
                 setRestoredPreferences(false);
             } else {
                 throw new Error('Logout failed');
             }
         } catch (err) {
-            console.error('Error during logout:', err);
+            logger.error('Error during logout:', err);
             setError(t('error_logout'));
         }
     };
@@ -113,8 +140,8 @@ const App = () => {
     const handleJoinMeeting = () => {
         const sanitizedMeetingId = meetingId.trim();
         const sanitizedUserId = userId.trim();
-        const meetingIdValid = /^[\w-]{3,50}$/.test(sanitizedMeetingId);
-        const userIdValid = /^[\w-]{2,50}$/.test(sanitizedUserId);
+        const meetingIdValid = MEETING_ID_PATTERN.test(sanitizedMeetingId);
+        const userIdValid = USER_ID_PATTERN.test(sanitizedUserId);
 
         if (!meetingIdValid) {
             setError(t('invalid_meeting_id_strict'));
@@ -126,8 +153,8 @@ const App = () => {
             return;
         }
 
-        localStorage.setItem('lastMeetingId', sanitizedMeetingId);
-        localStorage.setItem('lastUserId', sanitizedUserId);
+        localStorage.setItem(STORAGE_KEYS.meetingId, sanitizedMeetingId);
+        localStorage.setItem(STORAGE_KEYS.userId, sanitizedUserId);
         setError('');
         setShowVideoConference(true);
     };
@@ -138,7 +165,7 @@ const App = () => {
 
     const handleAuthSuccess = (authUser) => {
         setUser(authUser);
-        setUserId(authUser.id || authUser.name || 'user');
+        setUserId(authUser?.id || authUser?.name || 'user');
         setError('');
     };
 
@@ -154,21 +181,18 @@ const App = () => {
             }
 
             if (response.ok && data?.success) {
-                // Token refreshed successfully
-                console.log('Token refreshed');
+                return;
             } else {
-                // Refresh failed, redirect to login
                 setUser(null);
                 setError(t('session_expired'));
             }
         } catch (err) {
-            console.error('Error refreshing token:', err);
+            logger.error('Error refreshing token:', err);
             setUser(null);
             setError(t('session_expired'));
         }
     };
 
-    // Auto-refresh token on 401 errors
     useEffect(() => {
         const handleUnauthorized = (event) => {
             if (event.detail?.status === 401 && user) {
@@ -180,8 +204,8 @@ const App = () => {
         return () => window.removeEventListener('unauthorized', handleUnauthorized);
     }, [user]);
 
-    const isMeetingIdValid = /^[\w-]{3,50}$/.test(meetingId.trim());
-    const isUserIdValid = /^[\w-]{2,50}$/.test(userId.trim());
+    const isMeetingIdValid = MEETING_ID_PATTERN.test(meetingId.trim());
+    const isUserIdValid = USER_ID_PATTERN.test(userId.trim());
     const isJoinDisabled = !isMeetingIdValid || !userId || !isUserIdValid;
 
     const footerLinks = [
@@ -196,22 +220,21 @@ const App = () => {
     };
 
     const handleGetStarted = () => {
-        setActivePage('conference');
+        setActivePage(PAGES.conference);
         setAuthMode('register');
     };
 
     const handleViewIndex = () => {
-        setActivePage('index');
+        setActivePage(PAGES.index);
     };
 
     const handleJoinConsultation = () => {
-        setActivePage('conference');
+        setActivePage(PAGES.conference);
     };
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-900" style={backgroundStyle}>
             <div className="container mx-auto px-4 py-10">
-                {/* Header */}
                 <header className="mb-10 space-y-6 rounded-3xl border border-white/15 bg-white/10 px-6 py-8 text-white shadow-[0_20px_60px_-35px_rgba(15,23,42,0.8)] backdrop-blur-xl">
                     <div className="flex flex-col items-center gap-4 text-center">
                         <h1 className="text-4xl font-bold text-white sm:text-5xl">
@@ -232,7 +255,7 @@ const App = () => {
                     </div>
                 </header>
 
-                {activePage === 'landing' && (
+                {activePage === PAGES.landing && (
                     <ReadinessPanel
                         isMeetingIdValid={isMeetingIdValid}
                         isUserIdValid={isUserIdValid}
@@ -240,10 +263,8 @@ const App = () => {
                     />
                 )}
 
-                {/* Main Content */}
                 <div className="mx-auto max-w-5xl">
                     <div className="rounded-[32px] border border-white/60 bg-white/90 p-8 shadow-[0_40px_80px_-50px_rgba(15,23,42,0.7)] backdrop-blur">
-                        {/* Error Display */}
                         {error && (
                             <div
                                 className="mb-6 rounded-lg border border-red-400 bg-red-100 p-4 text-red-700 shadow-sm"
@@ -257,21 +278,21 @@ const App = () => {
                             </div>
                         )}
 
-                        {restoredPreferences && !showVideoConference && activePage === 'conference' && (
+                        {restoredPreferences && !showVideoConference && activePage === PAGES.conference && (
                             <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-800">
                                 {t('restored_preferences')}
                             </div>
                         )}
 
-                        {activePage === 'landing' && (
+                        {activePage === PAGES.landing && (
                             <LandingPage onGetStarted={handleGetStarted} onViewIndex={handleViewIndex} />
                         )}
 
-                        {activePage === 'index' && (
+                        {activePage === PAGES.index && (
                             <ConsultationIndex onJoinConsultation={handleJoinConsultation} />
                         )}
 
-                        {activePage === 'conference' && (
+                        {activePage === PAGES.conference && (
                             <div className="space-y-8">
                                 <AuthPanel
                                     user={user}
@@ -285,7 +306,6 @@ const App = () => {
                                     onModeChange={setAuthMode}
                                 />
 
-                                {/* Meeting Controls - Only show when authenticated */}
                                 {user && !showVideoConference && (
                                     <div className="space-y-4">
                                         <div className="border-t pt-6">
@@ -363,7 +383,6 @@ const App = () => {
                                     </div>
                                 )}
 
-                                {/* Video Conference Component */}
                                 {user && showVideoConference && (
                                     <VideoConference
                                         meetingId={meetingId}
@@ -374,7 +393,6 @@ const App = () => {
                             </div>
                         )}
 
-                        {/* Footer */}
                         <footer className="mt-10 border-t pt-6 text-center text-sm text-gray-500">
                             <div className="flex flex-wrap items-center justify-center gap-3">
                                 {footerLinks.map((link, index) => (
