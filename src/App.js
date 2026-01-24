@@ -299,13 +299,13 @@ const App = () => {
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-900" style={backgroundStyle}>
-            <div className="container mx-auto px-4 py-10">
+            <div className="container mx-auto px-4 pt-[calc(2.5rem+env(safe-area-inset-top))] pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
                 <header className="mb-10 space-y-6 rounded-3xl border border-white/15 bg-white/10 px-6 py-8 text-white shadow-[0_20px_60px_-35px_rgba(15,23,42,0.8)] backdrop-blur-xl">
                     <div className="flex flex-col items-center gap-4 text-center">
                         <h1 className="text-4xl font-bold text-white sm:text-5xl">
                             {t('welcome')}
                         </h1>
-                        <p className="max-w-2xl text-sm text-white/80 sm:text-base">
+                        <p className="max-w-2xl text-base text-white/80 sm:text-lg">
                             {t('landing_subtitle')}
                         </p>
                         <div className="flex flex-wrap items-center justify-center gap-4">
@@ -380,7 +380,7 @@ const App = () => {
 
                                             <div className="space-y-4">
                                                 <div>
-                                                    <label htmlFor="meetingId" className="block text-sm font-medium text-gray-700 mb-2">
+                                                    <label htmlFor="meetingId" className="block text-base font-medium text-gray-700 mb-2">
                                                         {t('meeting_id')}
                                                     </label>
                                                     <input
@@ -396,7 +396,7 @@ const App = () => {
                                                         aria-describedby="meetingId-help"
                                                         aria-invalid={!isMeetingIdValid}
                                                     />
-                                                    <p id="meetingId-help" className="mt-1 text-sm text-gray-500">
+                                                    <p id="meetingId-help" className="mt-1 text-base text-gray-500">
                                                         {t('meeting_instructions')}
                                                         <br />
                                                         <span className={isMeetingIdValid ? 'text-green-600' : 'text-red-600'}>
@@ -406,7 +406,7 @@ const App = () => {
                                                 </div>
 
                                                 <div>
-                                                    <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-2">
+                                                    <label htmlFor="userId" className="block text-base font-medium text-gray-700 mb-2">
                                                         {t('user_id')}
                                                     </label>
                                                     <input
@@ -421,7 +421,7 @@ const App = () => {
                                                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                                         aria-invalid={!isUserIdValid}
                                                     />
-                                                    <p className="mt-1 text-sm text-gray-500">
+                                                    <p className="mt-1 text-base text-gray-500">
                                                         <span className={isUserIdValid ? 'text-green-600' : 'text-red-600'}>
                                                             {t('user_id_rules')}
                                                         </span>
@@ -431,7 +431,7 @@ const App = () => {
                                                 <button
                                                     onClick={handleJoinMeeting}
                                                     disabled={isJoinDisabled}
-                                                    className={`w-full py-3 px-4 rounded-lg font-medium transition-colors duration-200 ${
+                                                    className={`w-full min-h-[44px] py-3 px-4 rounded-lg font-medium transition-colors duration-200 ${
                                                         !isJoinDisabled
                                                             ? 'bg-green-500 text-white hover:bg-green-600 focus:ring-2 focus:ring-green-500'
                                                             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -440,7 +440,7 @@ const App = () => {
                                                 >
                                                     {t('join_meeting')}
                                                 </button>
-                                                <p className="text-xs text-gray-500 text-center">
+                                                <p className="text-base text-gray-500 text-center">
                                                     {isJoinDisabled ? t('join_requirements_unmet') : t('join_ready')}
                                                 </p>
                                             </div>
@@ -458,11 +458,11 @@ const App = () => {
                             </div>
                         )}
 
-                        <footer className="mt-10 border-t pt-6 text-center text-sm text-gray-500">
+                        <footer className="mt-10 border-t pt-6 text-center text-base text-gray-500">
                             <div className="flex flex-wrap items-center justify-center gap-3">
                                 {footerLinks.map((link, index) => (
                                     <React.Fragment key={link.href}>
-                                        <a href={link.href} className="hover:text-blue-600 transition-colors">
+                                        <a href={link.href} className="inline-flex min-h-[44px] items-center justify-center px-2 hover:text-blue-600 transition-colors">
                                             {link.label}
                                         </a>
                                         {index !== footerLinks.length - 1 && <span className="text-gray-300">|</span>}

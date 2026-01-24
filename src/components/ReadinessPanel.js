@@ -59,10 +59,10 @@ const ReadinessPanel = ({ isMeetingIdValid, isUserIdValid, restoredPreferences }
         <section className="mb-8 bg-slate-900 text-white rounded-xl shadow-xl p-6">
             <div className="flex items-center justify-between mb-4">
                 <div>
-                    <p className="text-sm uppercase tracking-wide text-slate-400">{t('readiness_label')}</p>
+                    <p className="text-base uppercase tracking-wide text-slate-400">{t('readiness_label')}</p>
                     <h2 className="text-2xl font-bold">{t('readiness_title')}</h2>
                 </div>
-                <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-200">
+                <span className="inline-flex items-center px-3 py-1 text-base font-semibold rounded-full bg-slate-800 text-slate-200">
                     {t('readiness_live_status')}
                 </span>
             </div>
@@ -79,11 +79,11 @@ const ReadinessPanel = ({ isMeetingIdValid, isUserIdValid, restoredPreferences }
                         >
                             <div className="flex items-start justify-between mb-2">
                                 <div>
-                                    <p className="text-xs uppercase tracking-wide text-slate-500">{card.title}</p>
+                                    <p className="text-base uppercase tracking-wide text-slate-500">{card.title}</p>
                                     <h3 className="text-lg font-semibold text-slate-900">{card.description}</h3>
                                 </div>
                                 <span
-                                    className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-${card.tone}-50 text-${card.tone}-700 border border-${card.tone}-100`}
+                                    className={`inline-flex items-center px-2 py-1 text-base font-semibold rounded-full bg-${card.tone}-50 text-${card.tone}-700 border border-${card.tone}-100`}
                                 >
                                     {card.badge}
                                 </span>
@@ -91,15 +91,15 @@ const ReadinessPanel = ({ isMeetingIdValid, isUserIdValid, restoredPreferences }
 
                             <div className="flex items-center space-x-2 mb-3" aria-label={`${card.title} ${progress}%`}>
                                 <div className="flex-1 h-2 rounded-full bg-slate-100">
-                                    <div
-                                        className={`h-2 rounded-full bg-${card.tone}-500 transition-all`}
-                                        style={{ width: `${progress}%` }}
-                                    />
-                                </div>
-                                <span className="text-xs font-medium text-slate-600">{progress}%</span>
+                                <div
+                                    className={`h-2 rounded-full bg-${card.tone}-500 transition-all`}
+                                    style={{ width: `${progress}%` }}
+                                />
+                            </div>
+                                <span className="text-base font-medium text-slate-600">{progress}%</span>
                             </div>
 
-                            <ul className="space-y-2 text-sm text-slate-700 mb-4">
+                            <ul className="space-y-2 text-base text-slate-700 mb-4">
                                 {card.metrics.map((metric) => (
                                     <li key={metric.label} className="flex items-center space-x-2">
                                         <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${
@@ -116,7 +116,7 @@ const ReadinessPanel = ({ isMeetingIdValid, isUserIdValid, restoredPreferences }
 
                             <a
                                 href={card.cta.href}
-                                className={`mt-auto inline-flex items-center justify-center px-3 py-2 text-sm font-semibold rounded-md bg-${card.tone}-600 text-white hover:bg-${card.tone}-700 transition-colors`}
+                                className={`mt-auto inline-flex min-h-[44px] items-center justify-center px-3 py-2 text-base font-semibold rounded-md bg-${card.tone}-600 text-white hover:bg-${card.tone}-700 transition-colors`}
                             >
                                 {card.cta.label}
                             </a>

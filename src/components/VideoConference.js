@@ -38,8 +38,7 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
                 throw new Error('Failed to generate token');
             }
 
-            const { token, user: responseUser } = await response.json();
-            console.log('Joining room with token:', token);
+            const { user: responseUser } = await response.json();
 
             setIsJoined(true);
             setParticipants([{ id: responseUser?.id || user.id, name: responseUser?.name || user.name }]);
@@ -66,19 +65,17 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
 
     const toggleCamera = () => {
         setIsCameraOn(!isCameraOn);
-        console.log('Camera toggled:', !isCameraOn);
     };
 
     const toggleMicrophone = () => {
         setIsMicOn(!isMicOn);
-        console.log('Microphone toggled:', !isMicOn);
     };
 
     if (!isJoined) {
         return (
             <div className="mt-6 p-4 border rounded-lg bg-gray-50">
                 <h3 className="text-lg font-semibold mb-4">{t('join_meeting')}</h3>
-                <p className="text-gray-600 mb-4">{t('meeting_instructions')}</p>
+                <p className="text-base text-gray-600 mb-4">{t('meeting_instructions')}</p>
 
                 {error && (
                     <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -89,7 +86,7 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
                 <button
                     onClick={joinRoom}
                     disabled={isLoading || !meetingId}
-                    className={`w-full py-2 px-4 rounded-md font-medium transition-colors duration-200 ${
+                    className={`w-full min-h-[44px] py-2 px-4 rounded-md font-medium transition-colors duration-200 ${
                         isLoading || !meetingId
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             : 'bg-green-500 text-white hover:bg-green-600'
@@ -108,7 +105,7 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
                 <h3 className="text-lg font-semibold">
                     {t('meeting_id')}: {meetingId}
                 </h3>
-                <span className="text-sm text-gray-600">
+                <span className="text-base text-gray-600">
                     {t('participants')}: {participants.length}
                 </span>
             </div>
@@ -117,7 +114,7 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
                 <div className="text-white text-center">
                     <div className="text-4xl mb-2">📹</div>
                     <p>Video Conference Area</p>
-                    <p className="text-sm text-gray-300">
+                    <p className="text-base text-gray-300">
                         OxyLayer video streams would appear here
                     </p>
                 </div>
@@ -126,7 +123,7 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
             <div className="flex justify-center space-x-4 mb-4">
                 <button
                     onClick={toggleCamera}
-                    className={`p-3 rounded-full transition-colors duration-200 ${
+                    className={`min-h-[44px] min-w-[44px] p-3 rounded-full transition-colors duration-200 ${
                         isCameraOn
                             ? 'bg-blue-500 text-white hover:bg-blue-600'
                             : 'bg-red-500 text-white hover:bg-red-600'
@@ -139,7 +136,7 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
 
                 <button
                     onClick={toggleMicrophone}
-                    className={`p-3 rounded-full transition-colors duration-200 ${
+                    className={`min-h-[44px] min-w-[44px] p-3 rounded-full transition-colors duration-200 ${
                         isMicOn
                             ? 'bg-blue-500 text-white hover:bg-blue-600'
                             : 'bg-red-500 text-white hover:bg-red-600'
@@ -154,7 +151,7 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
             <div className="flex justify-center mb-4">
                 <button
                     onClick={leaveRoom}
-                    className="py-2 px-6 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors duration-200"
+                    className="min-h-[44px] py-2 px-6 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors duration-200"
                     aria-label={t('end_call')}
                     title={t('end_call')}
                 >
@@ -163,14 +160,14 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
             </div>
 
             <div className="border-t pt-4">
-                <h4 className="font-medium mb-2">{t('participants')}:</h4>
+                <h4 className="text-base font-medium mb-2">{t('participants')}:</h4>
                 <div className="space-y-2">
                     {participants.map((participant) => (
                         <div key={participant.id} className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
+                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-base">
                                 {participant.name.charAt(0).toUpperCase()}
                             </div>
-                            <span className="text-sm">{participant.name}</span>
+                            <span className="text-base">{participant.name}</span>
                         </div>
                     ))}
                 </div>
