@@ -21,12 +21,61 @@ const PAGES = {
     index: 'index',
     conference: 'conference'
 };
+const ENDPOINTS = {
+    authStatus: '/api/auth/status',
+    authLogout: '/api/auth/logout',
+    authRefresh: '/api/auth/refresh',
+    clientConfig: '/api/config/client'
+};
+const DEFAULT_USER_ID = 'user';
 const logger = {
     error: (message, error) => {
-        console.error(message, error);
+        if (process.env.NODE_ENV !== 'production') {
+            console.error(message, error);
+        }
     },
     warn: (message, error) => {
-        console.warn(message, error);
+        if (process.env.NODE_ENV !== 'production') {
+            console.warn(message, error);
+        }
+    }
+};
+
+const getStoredValue = (key) => {
+    try {
+        return localStorage.getItem(key);
+    } catch (storageError) {
+        logger.warn('Unable to read from local storage', storageError);
+        return null;
+    }
+};
+
+const setStoredValue = (key, value) => {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (storageError) {
+        logger.warn('Unable to write to local storage', storageError);
+        return false;
+    }
+};
+
+const removeStoredValue = (key) => {
+    try {
+        localStorage.removeItem(key);
+        return true;
+    } catch (storageError) {
+        logger.warn('Unable to remove from local storage', storageError);
+        return false;
+    }
+};
+
+const readJson = async (response) => {
+    try {
+        return await response.json();
+    } catch (parseError) {
+        logger.warn('Unable to parse JSON response', parseError);
+        return null;
     }
 };
 
@@ -55,8 +104,8 @@ const App = () => {
     }, []);
 
     useEffect(() => {
-        const savedMeetingId = localStorage.getItem(STORAGE_KEYS.meetingId);
-        const savedUserId = localStorage.getItem(STORAGE_KEYS.userId);
+        const savedMeetingId = getStoredValue(STORAGE_KEYS.meetingId);
+        const savedUserId = getStoredValue(STORAGE_KEYS.userId);
 
         if (savedMeetingId) {
             setMeetingId(savedMeetingId);
@@ -73,11 +122,11 @@ const App = () => {
     useEffect(() => {
         const fetchClientConfig = async () => {
             try {
-                const response = await fetch('/api/config/client');
+                const response = await fetch(ENDPOINTS.clientConfig);
                 if (!response.ok) {
                     throw new Error('Failed to fetch client config');
                 }
-                const configData = await response.json();
+                const configData = await readJson(response);
                 setClientConfig((previous) => ({
                     ...previous,
                     demoMode: Boolean(configData?.demoMode),
@@ -91,17 +140,21 @@ const App = () => {
         fetchClientConfig();
     }, []);
 
+    /**
+     * Loads the current auth state and updates the session context.
+     * @returns {Promise<void>} Resolves when auth status has been checked.
+     */
     const checkAuthStatus = async () => {
         try {
-            const response = await fetch('/api/auth/status');
+            const response = await fetch(ENDPOINTS.authStatus);
             if (!response.ok) {
                 throw new Error(`Auth status failed with ${response.status}`);
             }
-            const authStatus = await response.json();
+            const authStatus = await readJson(response);
 
             if (authStatus?.authenticated) {
                 setUser(authStatus.user);
-                setUserId(authStatus.user?.id || authStatus.user?.name || 'user');
+                setUserId(authStatus.user?.id || authStatus.user?.name || DEFAULT_USER_ID);
             }
         } catch (err) {
             logger.error('Error checking auth status:', err);
@@ -115,9 +168,13 @@ const App = () => {
         window.location.href = '/auth/francetravail/login';
     };
 
+    /**
+     * Logs out the current user and clears local session state.
+     * @returns {Promise<void>} Resolves when logout flow is complete.
+     */
     const handleLogout = async () => {
         try {
-            const response = await fetch('/api/auth/logout', { method: 'POST' });
+            const response = await fetch(ENDPOINTS.authLogout, { method: 'POST' });
             
             if (response.ok) {
                 setUser(null);
@@ -125,8 +182,8 @@ const App = () => {
                 setMeetingId('');
                 setUserId('');
                 setError('');
-                localStorage.removeItem(STORAGE_KEYS.meetingId);
-                localStorage.removeItem(STORAGE_KEYS.userId);
+                removeStoredValue(STORAGE_KEYS.meetingId);
+                removeStoredValue(STORAGE_KEYS.userId);
                 setRestoredPreferences(false);
             } else {
                 throw new Error('Logout failed');
@@ -137,6 +194,10 @@ const App = () => {
         }
     };
 
+    /**
+     * Validates inputs and prepares the user for joining a meeting.
+     * @returns {void}
+     */
     const handleJoinMeeting = () => {
         const sanitizedMeetingId = meetingId.trim();
         const sanitizedUserId = userId.trim();
@@ -153,8 +214,8 @@ const App = () => {
             return;
         }
 
-        localStorage.setItem(STORAGE_KEYS.meetingId, sanitizedMeetingId);
-        localStorage.setItem(STORAGE_KEYS.userId, sanitizedUserId);
+        setStoredValue(STORAGE_KEYS.meetingId, sanitizedMeetingId);
+        setStoredValue(STORAGE_KEYS.userId, sanitizedUserId);
         setError('');
         setShowVideoConference(true);
     };
@@ -163,22 +224,24 @@ const App = () => {
         setShowVideoConference(false);
     };
 
+    /**
+     * Updates the UI with the authenticated user details.
+     * @param {object} authUser - Authenticated user payload.
+     */
     const handleAuthSuccess = (authUser) => {
         setUser(authUser);
-        setUserId(authUser?.id || authUser?.name || 'user');
+        setUserId(authUser?.id || authUser?.name || DEFAULT_USER_ID);
         setError('');
     };
 
+    /**
+     * Refreshes the auth token when the session is unauthorized.
+     * @returns {Promise<void>} Resolves when token refresh completes.
+     */
     const refreshToken = async () => {
         try {
-            const response = await fetch('/api/auth/refresh', { method: 'POST' });
-            let data = null;
-
-            try {
-                data = await response.json();
-            } catch (parseError) {
-                data = null;
-            }
+            const response = await fetch(ENDPOINTS.authRefresh, { method: 'POST' });
+            const data = await readJson(response);
 
             if (response.ok && data?.success) {
                 return;
@@ -204,9 +267,11 @@ const App = () => {
         return () => window.removeEventListener('unauthorized', handleUnauthorized);
     }, [user]);
 
-    const isMeetingIdValid = MEETING_ID_PATTERN.test(meetingId.trim());
-    const isUserIdValid = USER_ID_PATTERN.test(userId.trim());
-    const isJoinDisabled = !isMeetingIdValid || !userId || !isUserIdValid;
+    const trimmedMeetingId = meetingId.trim();
+    const trimmedUserId = userId.trim();
+    const isMeetingIdValid = MEETING_ID_PATTERN.test(trimmedMeetingId);
+    const isUserIdValid = USER_ID_PATTERN.test(trimmedUserId);
+    const isJoinDisabled = !isMeetingIdValid || !trimmedUserId || !isUserIdValid;
 
     const footerLinks = [
         { href: '/terms', label: t('terms') },
