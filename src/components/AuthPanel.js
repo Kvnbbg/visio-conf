@@ -99,7 +99,7 @@ const AuthPanel = ({
         return (
             <div className="flex items-center justify-center py-3">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                <span className="ml-2 text-gray-600">{t('loading')}</span>
+                <span className="ml-2 text-base text-gray-600">{t('loading')}</span>
             </div>
         );
     }
@@ -116,7 +116,7 @@ const AuthPanel = ({
                             <p className="font-medium text-green-800">
                                 {t('welcome_user', { name: user.name || user.id })}
                             </p>
-                            <p className="text-sm text-green-600">
+                            <p className="text-base text-green-600">
                                 {user.email || t('authenticated')}
                             </p>
                         </div>
@@ -125,7 +125,7 @@ const AuthPanel = ({
 
                 <button
                     onClick={onLogout}
-                    className="w-full rounded-xl bg-red-500 px-4 py-3 font-medium text-white transition-colors duration-200 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    className="w-full min-h-[44px] rounded-xl bg-red-500 px-4 py-3 font-medium text-white transition-colors duration-200 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                     aria-label={t('logout_button')}
                 >
                     {t('logout_button')}
@@ -137,14 +137,14 @@ const AuthPanel = ({
     return (
         <div className="space-y-6">
             <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-center text-indigo-800">
-                <p className="text-sm font-semibold">{t('family_invite_title')}</p>
-                <p className="mt-1 text-sm text-indigo-700">{t('family_invite_body')}</p>
+                <p className="text-base font-semibold">{t('family_invite_title')}</p>
+                <p className="mt-1 text-base text-indigo-700">{t('family_invite_body')}</p>
             </div>
 
             <div className="flex gap-2 rounded-full bg-gray-100 p-1">
                 <button
                     onClick={() => onModeChange('register')}
-                    className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold ${
+                    className={`flex-1 min-h-[44px] rounded-full px-4 py-2 text-base font-semibold ${
                         isRegister ? 'bg-white text-indigo-700 shadow' : 'text-gray-500'
                     }`}
                     aria-pressed={isRegister}
@@ -153,7 +153,7 @@ const AuthPanel = ({
                 </button>
                 <button
                     onClick={() => onModeChange('login')}
-                    className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold ${
+                    className={`flex-1 min-h-[44px] rounded-full px-4 py-2 text-base font-semibold ${
                         !isRegister ? 'bg-white text-indigo-700 shadow' : 'text-gray-500'
                     }`}
                     aria-pressed={!isRegister}
@@ -164,7 +164,7 @@ const AuthPanel = ({
 
             {status.error && (
                 <div
-                    className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                    className="rounded-xl border border-red-200 bg-red-50 p-3 text-base text-red-700"
                     role="alert"
                     aria-live="assertive"
                 >
@@ -173,7 +173,7 @@ const AuthPanel = ({
             )}
 
             {status.success && (
-                <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-base text-green-700">
                     {status.success}
                 </div>
             )}
@@ -181,7 +181,7 @@ const AuthPanel = ({
             <div className="space-y-4">
                 {isRegister && (
                     <div>
-                        <label htmlFor="auth-name" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="auth-name" className="block text-base font-medium text-gray-700 mb-2">
                             {t('register_name')}
                         </label>
                         <input
@@ -196,7 +196,7 @@ const AuthPanel = ({
                 )}
 
                 <div>
-                    <label htmlFor="auth-email" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="auth-email" className="block text-base font-medium text-gray-700 mb-2">
                         {t('auth_email')}
                     </label>
                     <input
@@ -210,7 +210,7 @@ const AuthPanel = ({
                 </div>
 
                 <div>
-                    <label htmlFor="auth-password" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="auth-password" className="block text-base font-medium text-gray-700 mb-2">
                         {t('auth_password')}
                     </label>
                     <input
@@ -222,13 +222,13 @@ const AuthPanel = ({
                         className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                     {isRegister && (
-                        <p className="mt-1 text-xs text-gray-500">{t('register_password_hint')}</p>
+                        <p className="mt-1 text-base text-gray-500">{t('register_password_hint')}</p>
                     )}
                 </div>
 
                 {isRegister && (
                     <div>
-                        <label htmlFor="auth-password-confirm" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="auth-password-confirm" className="block text-base font-medium text-gray-700 mb-2">
                             {t('register_confirm_password')}
                         </label>
                         <input
@@ -245,7 +245,7 @@ const AuthPanel = ({
                 <button
                     onClick={submitAuth}
                     disabled={!formReady || submitting}
-                    className={`w-full rounded-xl px-4 py-3 font-medium transition-colors duration-200 ${
+                    className={`w-full min-h-[44px] rounded-xl px-4 py-3 font-medium transition-colors duration-200 ${
                         formReady && !submitting
                             ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                             : 'bg-gray-200 text-gray-500 cursor-not-allowed'
@@ -260,7 +260,7 @@ const AuthPanel = ({
             </div>
 
             <div className="space-y-3">
-                <div className="flex items-center gap-3 text-xs text-gray-400">
+                <div className="flex items-center gap-3 text-base text-gray-400">
                     <span className="h-px flex-1 bg-gray-200"></span>
                     <span>{t('auth_alt_label')}</span>
                     <span className="h-px flex-1 bg-gray-200"></span>
@@ -269,7 +269,7 @@ const AuthPanel = ({
                 <button
                     onClick={onFranceTravailLogin}
                     disabled={!franceTravailEnabled}
-                    className={`w-full rounded-xl px-4 py-3 font-medium transition-colors duration-200 ${
+                    className={`w-full min-h-[44px] rounded-xl px-4 py-3 font-medium transition-colors duration-200 ${
                         franceTravailEnabled
                             ? 'bg-blue-600 text-white hover:bg-blue-700'
                             : 'bg-gray-200 text-gray-500 cursor-not-allowed'
@@ -303,7 +303,7 @@ const AuthPanel = ({
                                 setSubmitting(false);
                             }
                         }}
-                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        className="w-full min-h-[44px] rounded-xl border border-gray-200 bg-white px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50"
                     >
                         {t('demo_login_cta')}
                     </button>

@@ -29,7 +29,7 @@ const HealthCheck = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
+            <div className="flex items-center space-x-2 text-base text-gray-500">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
                 <span>{t('loading')}</span>
             </div>
@@ -39,7 +39,7 @@ const HealthCheck = () => {
     const isHealthy = health?.status === 'ok';
     
     return (
-        <div className={`flex items-center space-x-2 text-sm ${
+        <div className={`flex items-center space-x-2 text-base ${
             isHealthy ? 'text-green-600' : 'text-red-600'
         }`}>
             <div className={`w-2 h-2 rounded-full ${
@@ -49,7 +49,7 @@ const HealthCheck = () => {
                 {isHealthy ? t('health_ok') : t('health_error')}
             </span>
             {!isHealthy && health?.message && (
-                <span className="text-xs opacity-80">({health.message})</span>
+                <span className="text-base opacity-80">({health.message})</span>
             )}
         </div>
     );

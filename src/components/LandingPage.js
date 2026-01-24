@@ -34,7 +34,7 @@ const LandingPage = ({ onGetStarted, onViewIndex }) => {
             <div className="rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 p-8 text-white shadow-xl shadow-indigo-900/30">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                     <div className="space-y-4">
-                        <p className="text-sm uppercase tracking-[0.2em] text-indigo-100">
+                        <p className="text-base uppercase tracking-[0.2em] text-indigo-100">
                             {t('landing_badge')}
                         </p>
                         <h2 className="text-3xl font-bold sm:text-4xl">{t('landing_title')}</h2>
@@ -47,7 +47,7 @@ const LandingPage = ({ onGetStarted, onViewIndex }) => {
                             <button
                                 key={button.label}
                                 onClick={button.onClick}
-                                className={`rounded-full px-5 py-2.5 text-sm font-semibold shadow transition ${button.className}`}
+                                className={`min-h-[44px] rounded-full px-5 py-2.5 text-base font-semibold shadow transition ${button.className}`}
                             >
                                 {button.label}
                             </button>
@@ -60,14 +60,14 @@ const LandingPage = ({ onGetStarted, onViewIndex }) => {
                 {highlights.map((item) => (
                     <div key={item.title} className="rounded-2xl border border-indigo-100 bg-white/80 p-5 shadow-sm backdrop-blur">
                         <h3 className="text-base font-semibold text-indigo-700">{item.title}</h3>
-                        <p className="mt-2 text-sm text-gray-600">{item.description}</p>
+                        <p className="mt-2 text-base text-gray-600">{item.description}</p>
                     </div>
                 ))}
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-800">{t('landing_steps_title')}</h3>
-                <ul className="mt-4 space-y-3 text-sm text-gray-600">
+                <ul className="mt-4 space-y-3 text-base text-gray-600">
                     {steps.map((step) => (
                         <li key={step} className="flex items-start gap-3">
                             <span className="mt-0.5 text-indigo-600">●</span>
