@@ -93,10 +93,7 @@ const AdContainer = ({ title, body, cta }) => {
     );
 };
 
-const SocialFeed = ({ currentUser }) => {
-    const { t, i18n } = useTranslation();
-    const safeUser = currentUser || { id: 'guest', name: t('feed_guest_name'), handle: '@guest' };
-    const [posts, setPosts] = useState([
+const initialPosts = [
         {
             id: 'post-1',
             author: {
@@ -149,7 +146,12 @@ const SocialFeed = ({ currentUser }) => {
             resharedByMe: false,
             savedByMe: true
         }
-    ]);
+    ];
+
+const SocialFeed = ({ currentUser }) => {
+    const { t, i18n } = useTranslation();
+    const safeUser = currentUser || { id: 'guest', name: t('feed_guest_name'), handle: '@guest' };
+    const [posts, setPosts] = useState(initialPosts);
     const [sortMode, setSortMode] = useState('trending');
     const [composerText, setComposerText] = useState('');
     const [statusMessage, setStatusMessage] = useState('');
@@ -163,6 +165,29 @@ const SocialFeed = ({ currentUser }) => {
         const storedDate = localStorage.getItem(STREAK_DATE_KEY) || getUtcDateKey(new Date());
         setStreakCount(Number.isNaN(storedCount) ? 1 : storedCount);
         setStreakDate(storedDate);
+    }, []);
+
+    useEffect(() => {
+        let isActive = true;
+        apiRequest('/api/posts', 'GET')
+            .then((payload) => {
+                if (!isActive) {
+                    return;
+                }
+                if (payload?.posts?.length) {
+                    setPosts(payload.posts);
+                }
+            })
+            .catch(() => {
+                if (!isActive) {
+                    return;
+                }
+                setPosts(initialPosts);
+            });
+
+        return () => {
+            isActive = false;
+        };
     }, []);
 
     useEffect(() => {
