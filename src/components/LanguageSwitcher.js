@@ -33,7 +33,7 @@ const LanguageSwitcher = ({ compact = false }) => {
                     <button
                         key={lang.code}
                         onClick={() => changeLanguage(lang.code)}
-                        className={`flex min-h-[36px] items-center gap-2 rounded-full px-3 py-1.5 text-base font-semibold transition-all duration-200 sm:px-4 ${
+                        className={`flex min-h-[44px] items-center gap-2 rounded-full px-3 py-1.5 text-base font-semibold transition-all duration-200 sm:px-4 ${
                             activeLanguage === lang.code
                                 ? compact
                                     ? 'bg-white text-slate-900 shadow'

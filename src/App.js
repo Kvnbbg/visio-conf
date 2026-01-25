@@ -7,6 +7,7 @@ import ConsultationIndex from './components/ConsultationIndex';
 import VideoConference from './components/VideoConference';
 import HealthCheck from './components/HealthCheck';
 import ReadinessPanel from './components/ReadinessPanel';
+import SocialFeed from './components/SocialFeed';
 import './i18n';
 
 const MEETING_ID_PATTERN = /^[\w-]{3,50}$/;
@@ -18,7 +19,8 @@ const STORAGE_KEYS = {
 const PAGES = {
     landing: 'landing',
     index: 'index',
-    conference: 'conference'
+    conference: 'conference',
+    feed: 'feed'
 };
 const ENDPOINTS = {
     authStatus: '/api/auth/status',
@@ -298,6 +300,7 @@ const App = () => {
         () => [
             { id: PAGES.landing, label: t('nav_landing'), description: t('nav_landing_desc') },
             { id: PAGES.index, label: t('nav_index'), description: t('nav_index_desc') },
+            { id: PAGES.feed, label: t('nav_feed'), description: t('nav_feed_desc') },
             { id: PAGES.conference, label: t('nav_conference'), description: t('nav_conference_desc') }
         ],
         [t]
@@ -309,6 +312,8 @@ const App = () => {
         switch (activePage) {
             case PAGES.index:
                 return { title: t('index_title'), description: t('index_subtitle') };
+            case PAGES.feed:
+                return { title: t('feed_title'), description: t('feed_subtitle') };
             case PAGES.conference:
                 return { title: t('nav_conference'), description: t('nav_conference_desc') };
             case PAGES.landing:
@@ -342,12 +347,12 @@ const App = () => {
         setActivePage(PAGES.conference);
     };
 
-    const showAside = !(activePage === PAGES.conference && showVideoConference);
+    const showAside = !(activePage === PAGES.conference && showVideoConference) && activePage !== PAGES.feed;
     const mainColumnClass = showAside ? 'lg:col-span-8' : 'lg:col-span-12';
 
     return (
         <div
-            className={`min-h-screen ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'}`}
+            className={`min-h-screen text-base ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'}`}
             style={backgroundStyle}
         >
             <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 text-white backdrop-blur">
@@ -495,6 +500,18 @@ const App = () => {
                         {activePage === PAGES.index && (
                             <Panel title={t('index_title')} description={t('index_subtitle')}>
                                 <ConsultationIndex onJoinConsultation={handleJoinConsultation} />
+                            </Panel>
+                        )}
+
+                        {activePage === PAGES.feed && (
+                            <Panel title={t('feed_title')} description={t('feed_subtitle')}>
+                                <SocialFeed
+                                    currentUser={
+                                        user
+                                            ? { ...user, handle: `@${user.name || user.id}` }
+                                            : { id: 'guest', name: t('feed_guest_name'), handle: '@guest' }
+                                    }
+                                />
                             </Panel>
                         )}
 
