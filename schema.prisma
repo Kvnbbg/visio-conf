@@ -54,6 +54,8 @@ model User {
   sessions          UserSession[]
   auditLogs         AuditLog[]
   notifications     Notification[]
+  ghostProfile      GhostProfile?
+  socialPosts       SocialPost[]
   
   @@map("users")
   @@index([email])
@@ -435,3 +437,46 @@ enum NotificationType {
   @@map("notification_type")
 }
 
+// Social feed ghost profiles
+model GhostProfile {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId            String   @unique @db.Uuid
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  handle            String   @unique @db.VarChar(50)
+  bio               String?  @db.VarChar(160)
+  avatarUrl         String?  @db.VarChar(500)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("ghost_profiles")
+  @@index([handle])
+  @@index([createdAt])
+}
+
+// Social feed posts for demo activity
+model SocialPost {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  authorId          String   @db.Uuid
+  author            User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  content           String   @db.Text
+  imageUrl          String?  @db.VarChar(500)
+  hashtags          String[]
+  likeCount         Int      @default(0)
+  viewCount         Int      @default(0)
+  reshareCount      Int      @default(0)
+  saveCount         Int      @default(0)
+  isGhost           Boolean  @default(false)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("social_posts")
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([isGhost])
+}

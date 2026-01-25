@@ -7,6 +7,8 @@ require('dotenv').config();
 const logger = require('./lib/logger');
 const packageInfo = require('./package.json');
 const { loadConfig } = require('./lib/config');
+const prisma = require('./lib/prisma');
+const ghostPostTemplates = require('./data/ghost-post-templates.json');
 
 let helmet = null;
 try {
@@ -63,6 +65,34 @@ const HELP_TEXT = [
     '  -v, --version    Print the current version',
     ''
 ].join('\n');
+
+const randomItem = (items) => items[Math.floor(Math.random() * items.length)];
+const extractHashtags = (content) => {
+    const matches = content.match(/#[\w-]+/g);
+    return matches ? matches.map((tag) => tag.toLowerCase()) : [];
+};
+const buildImageUrl = () => {
+    const topics = ['technology', 'workspace', 'design', 'startup', 'coding', 'coffee', 'creative'];
+    return `https://source.unsplash.com/featured/900x600?${encodeURIComponent(randomItem(topics))}`;
+};
+const formatPostResponse = (post) => ({
+    id: post.id,
+    author: {
+        id: post.author.id,
+        name: post.author.displayName || `${post.author.firstName} ${post.author.lastName}`.trim(),
+        handle: post.author.ghostProfile?.handle || `@${post.author.firstName.toLowerCase()}`,
+        avatarUrl: post.author.ghostProfile?.avatarUrl || post.author.avatar || null
+    },
+    content: post.content,
+    createdAt: post.createdAt,
+    likes: post.likeCount,
+    reshares: post.reshareCount,
+    saves: post.saveCount,
+    likedByMe: false,
+    resharedByMe: false,
+    savedByMe: false,
+    imageUrl: post.imageUrl || null
+});
 
 const args = process.argv.slice(2);
 if (args.includes('--help') || args.includes('-h')) {
@@ -640,6 +670,224 @@ app.get('/api/auth/validate', async (req, res) => {
     } catch (error) {
         logger.error('Token validation failed', { error: error.message });
         res.status(500).json({ error: 'Impossible de valider le token' });
+    }
+});
+
+// Social feed API
+app.get('/api/posts', async (req, res, next) => {
+    try {
+        const limit = Math.min(Number(req.query.limit) || 200, 500);
+        const posts = await prisma.socialPost.findMany({
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                author: {
+                    include: { ghostProfile: true }
+                }
+            }
+        });
+
+        res.json({ posts: posts.map(formatPostResponse) });
+    } catch (error) {
+        next(error);
+    }
+});
+
+app.post('/api/posts', async (req, res, next) => {
+    try {
+        const { content, imageUrl, author } = req.body || {};
+        if (!content || typeof content !== 'string') {
+            return res.status(400).json({ error: 'Contenu manquant' });
+        }
+
+        let authorRecord = null;
+        if (author?.id) {
+            authorRecord = await prisma.user.findUnique({ where: { id: author.id } });
+        }
+
+        if (!authorRecord) {
+            const displayName = author?.name || 'Guest User';
+            const [firstName, ...lastNameParts] = displayName.split(' ').filter(Boolean);
+            const lastName = lastNameParts.join(' ') || 'User';
+            const handle = author?.handle?.replace('@', '') || `guest_${Date.now()}`;
+            const email = `feed+${handle}@visio-conf.local`;
+            authorRecord = await prisma.user.create({
+                data: {
+                    email,
+                    firstName: firstName || 'Guest',
+                    lastName,
+                    displayName,
+                    avatar: author?.avatarUrl || null,
+                    language: 'en',
+                    timezone: 'Europe/Paris',
+                    isActive: true,
+                    isVerified: true,
+                    emailVerified: true,
+                    emailVerifiedAt: new Date()
+                }
+            });
+        }
+
+        const post = await prisma.socialPost.create({
+            data: {
+                authorId: authorRecord.id,
+                content,
+                imageUrl: imageUrl || null,
+                hashtags: extractHashtags(content),
+                likeCount: 0,
+                viewCount: 0,
+                reshareCount: 0,
+                saveCount: 0,
+                isGhost: false
+            },
+            include: {
+                author: {
+                    include: { ghostProfile: true }
+                }
+            }
+        });
+
+        res.status(201).json(formatPostResponse(post));
+    } catch (error) {
+        next(error);
+    }
+});
+
+app.put('/api/posts/:id', async (req, res, next) => {
+    try {
+        const { content } = req.body || {};
+        if (!content || typeof content !== 'string') {
+            return res.status(400).json({ error: 'Contenu manquant' });
+        }
+
+        const post = await prisma.socialPost.update({
+            where: { id: req.params.id },
+            data: {
+                content,
+                hashtags: extractHashtags(content)
+            },
+            include: {
+                author: {
+                    include: { ghostProfile: true }
+                }
+            }
+        });
+
+        res.json(formatPostResponse(post));
+    } catch (error) {
+        next(error);
+    }
+});
+
+app.delete('/api/posts/:id', async (req, res, next) => {
+    try {
+        await prisma.socialPost.delete({ where: { id: req.params.id } });
+        res.status(204).send();
+    } catch (error) {
+        next(error);
+    }
+});
+
+const bumpPostCount = async (req, res, next, field) => {
+    try {
+        const post = await prisma.socialPost.update({
+            where: { id: req.params.id },
+            data: { [field]: { increment: 1 } },
+            include: { author: { include: { ghostProfile: true } } }
+        });
+        res.json(formatPostResponse(post));
+    } catch (error) {
+        next(error);
+    }
+};
+
+app.post('/api/posts/:id/like', (req, res, next) => bumpPostCount(req, res, next, 'likeCount'));
+app.post('/api/posts/:id/save', (req, res, next) => bumpPostCount(req, res, next, 'saveCount'));
+app.post('/api/posts/:id/reshare', (req, res, next) => bumpPostCount(req, res, next, 'reshareCount'));
+
+// Vercel Cron heartbeat
+app.all('/api/cron/simulation', async (req, res, next) => {
+    try {
+        const secret = process.env.CRON_SECRET;
+        const authHeader = req.headers.authorization || '';
+        const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+        const provided = req.headers['x-cron-secret'] || req.query.secret || bearerToken;
+
+        if (secret && provided !== secret) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const ghostCount = await prisma.ghostProfile.count();
+        if (!ghostCount) {
+            return res.status(200).json({ status: 'skipped', reason: 'No ghost profiles available' });
+        }
+
+        const ghostProfile = await prisma.ghostProfile.findFirst({
+            skip: Math.floor(Math.random() * ghostCount),
+            include: { user: true }
+        });
+
+        if (!ghostProfile) {
+            return res.status(200).json({ status: 'skipped', reason: 'No ghost profile found' });
+        }
+
+        const shouldCreatePost = Math.random() > 0.35;
+        if (shouldCreatePost) {
+            const template = randomItem(ghostPostTemplates);
+            const content = template;
+            const post = await prisma.socialPost.create({
+                data: {
+                    authorId: ghostProfile.userId,
+                    content,
+                    imageUrl: Math.random() > 0.6 ? buildImageUrl() : null,
+                    hashtags: extractHashtags(content),
+                    likeCount: Math.floor(Math.random() * 15),
+                    viewCount: Math.floor(Math.random() * 400) + 100,
+                    reshareCount: Math.floor(Math.random() * 5),
+                    saveCount: Math.floor(Math.random() * 5),
+                    isGhost: true
+                },
+                include: {
+                    author: {
+                        include: { ghostProfile: true }
+                    }
+                }
+            });
+
+            return res.json({ status: 'created', post: formatPostResponse(post) });
+        }
+
+        const existingPostCount = await prisma.socialPost.count();
+        if (!existingPostCount) {
+            return res.status(200).json({ status: 'skipped', reason: 'No posts available' });
+        }
+
+        const targetPost = await prisma.socialPost.findFirst({
+            skip: Math.floor(Math.random() * existingPostCount),
+            include: {
+                author: { include: { ghostProfile: true } }
+            }
+        });
+
+        if (!targetPost) {
+            return res.status(200).json({ status: 'skipped', reason: 'No post found' });
+        }
+
+        const likeBoost = Math.floor(Math.random() * 6) + 5;
+        const updatedPost = await prisma.socialPost.update({
+            where: { id: targetPost.id },
+            data: {
+                likeCount: { increment: likeBoost },
+                viewCount: { increment: likeBoost * 20 }
+            },
+            include: {
+                author: { include: { ghostProfile: true } }
+            }
+        });
+
+        return res.json({ status: 'boosted', likesAdded: likeBoost, post: formatPostResponse(updatedPost) });
+    } catch (error) {
+        next(error);
     }
 });
 
