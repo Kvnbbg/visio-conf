@@ -53,19 +53,25 @@ const { AppError } = require('./lib/errors');
 const app = express();
 const SPA_EXCLUDED_PREFIXES = ['/api', '/auth', '/health', '/locales'];
 const INDEX_HTML_PATH = path.join(__dirname, 'public', 'index.html');
+const HELP_TEXT = [
+    `Visio-Conf ${packageInfo.version}`,
+    '',
+    'Usage: node server.js [options]',
+    '',
+    'Options:',
+    '  -h, --help       Show this help output',
+    '  -v, --version    Print the current version',
+    ''
+].join('\n');
 
 const args = process.argv.slice(2);
 if (args.includes('--help') || args.includes('-h')) {
-    console.log(`Visio-Conf ${packageInfo.version}\n`);
-    console.log('Usage: node server.js [options]');
-    console.log('\nOptions:');
-    console.log('  -h, --help       Show this help output');
-    console.log('  -v, --version    Print the current version');
+    process.stdout.write(`${HELP_TEXT}\n`);
     process.exit(0);
 }
 
 if (args.includes('--version') || args.includes('-v')) {
-    console.log(packageInfo.version);
+    process.stdout.write(`${packageInfo.version}\n`);
     process.exit(0);
 }
 
@@ -677,9 +683,9 @@ if (require.main === module) {
     const server = app.listen(PORT, '0.0.0.0', () => {
         const address = server.address();
         const activePort = typeof address === 'object' && address ? address.port : PORT;
-        console.log(`Serveur démarré sur le port ${activePort}`);
-        console.log(`URL locale: http://localhost:${activePort}`);
-        console.log(`Callback URL: ${franceTravailConfig.redirectUri}`);
+        logger.info(`Serveur démarré sur le port ${activePort}`);
+        logger.info(`URL locale: http://localhost:${activePort}`);
+        logger.info(`Callback URL: ${franceTravailConfig.redirectUri}`);
     });
 
     const gracefulShutdown = (signal) => {
