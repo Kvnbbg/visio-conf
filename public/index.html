@@ -27,6 +27,9 @@
     <script src="https://unpkg.com/i18next@23.7.6/dist/umd/i18next.min.js"></script>
     <script src="https://unpkg.com/react-i18next@13.5.0/react-i18next.min.js"></script>
     <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/i18nextBrowserLanguageDetector.min.js"></script>
+
+    <!-- Lucide icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     
     <!-- ZEGOCLOUD SDKs -->
     <script src="https://unpkg.com/zego-express-engine-webrtc@3.0.2/index.js"></script>
@@ -162,6 +165,57 @@
             width: 20px;
             height: 20px;
             animation: spin 1s linear infinite;
+        }
+
+        .lucide-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        .lucide-icon.sm {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .lucide-icon.lg {
+            width: 2rem;
+            height: 2rem;
+        }
+
+        .icon-float {
+            animation: icon-float 4s ease-in-out infinite;
+        }
+
+        .icon-pulse {
+            animation: icon-pulse 3.2s ease-in-out infinite;
+        }
+
+        .icon-spin-slow {
+            animation: icon-spin 12s linear infinite;
+        }
+
+        @keyframes icon-float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-6px);
+            }
+        }
+
+        @keyframes icon-pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.08);
+            }
+        }
+
+        @keyframes icon-spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         @keyframes spin {
@@ -768,8 +822,26 @@
     
     <!-- Main React Application -->
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
         const classNames = (...classes) => classes.filter(Boolean).join(' ');
+
+        const LucideIcon = ({ name, className }) => {
+            const iconRef = useRef(null);
+
+            useEffect(() => {
+                if (!iconRef.current || !window.lucide?.icons) {
+                    return;
+                }
+
+                const icon = window.lucide.icons[name];
+
+                iconRef.current.innerHTML = icon
+                    ? icon.toSvg({ class: classNames('lucide-icon', className) })
+                    : '';
+            }, [name, className]);
+
+            return <span ref={iconRef} aria-hidden="true"></span>;
+        };
         
         // Error Boundary Component
         class ErrorBoundary extends React.Component {
@@ -912,16 +984,18 @@
         const TrustBadges = () => (
             <div className="my-6 flex flex-wrap justify-center gap-3" role="list" aria-label="Certifications de sécurité">
                 {[
-                    { icon: '🔐', label: 'Chiffrement AES-256' },
-                    { icon: '🛡️', label: 'Conforme RGPD' },
-                    { icon: '🌍', label: 'OxyLayer - croissance durable' },
+                    { icon: 'lock', label: 'Chiffrement AES-256', tone: 'text-cyan-200', animation: 'icon-pulse' },
+                    { icon: 'shield-check', label: 'Conforme RGPD', tone: 'text-emerald-200', animation: 'icon-float' },
+                    { icon: 'globe', label: 'OxyLayer - croissance durable', tone: 'text-sky-200', animation: 'icon-spin-slow' },
                 ].map((badge) => (
                     <span
                         key={badge.label}
                         className="rounded-full border border-white/25 bg-slate-900/60 px-4 py-2 text-xs font-medium text-white"
                         role="listitem"
                     >
-                        <span className="mr-1" aria-hidden="true">{badge.icon}</span>
+                        <span className={classNames('mr-2 inline-flex items-center', badge.tone)} aria-hidden="true">
+                            <LucideIcon name={badge.icon} className={badge.animation} />
+                        </span>
                         {badge.label}
                     </span>
                 ))}
@@ -933,24 +1007,32 @@
                 <h3 className="mb-3 text-base font-semibold text-white">Fiabilité durable</h3>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {[{
-                        icon: '⚡',
+                        icon: 'zap',
                         title: 'Connexion instantanée',
-                        text: 'Optimisée pour les réseaux 4G/5G et Wi-Fi d’entreprise.'
+                        text: 'Optimisée pour les réseaux 4G/5G et Wi-Fi d’entreprise.',
+                        tone: 'text-amber-200',
+                        animation: 'icon-pulse'
                     }, {
-                        icon: '🌱',
+                        icon: 'leaf',
                         title: 'OxyLayer Growth Mesh',
-                        text: 'Une couche d’oxygénation numérique qui soutient la croissance sans épuiser la planète.'
+                        text: 'Une couche d’oxygénation numérique qui soutient la croissance sans épuiser la planète.',
+                        tone: 'text-emerald-200',
+                        animation: 'icon-float'
                     }, {
-                        icon: '🫧',
+                        icon: 'sparkles',
                         title: 'Bouclier atmosphérique',
-                        text: 'Un supplément d’oxygène intégré pour préserver l’équilibre environnemental.'
+                        text: 'Un supplément d’oxygène intégré pour préserver l’équilibre environnemental.',
+                        tone: 'text-cyan-200',
+                        animation: 'icon-spin-slow'
                     }].map((feature) => (
                         <article
                             key={feature.title}
                             className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-white"
                             aria-label={feature.title}
                         >
-                            <div className="text-2xl mb-2" aria-hidden="true">{feature.icon}</div>
+                            <div className={classNames('mb-2 inline-flex items-center', feature.tone)} aria-hidden="true">
+                                <LucideIcon name={feature.icon} className={classNames('lg', feature.animation)} />
+                            </div>
                             <p className="font-semibold mb-1">{feature.title}</p>
                             <p className="text-sm leading-relaxed text-white/80">{feature.text}</p>
                         </article>
@@ -1021,24 +1103,30 @@
             const modes = [
                 {
                     key: 'focus',
-                    icon: '🎧',
+                    icon: 'headphones',
                     title: i18next.t('experience_modes_focus_title'),
                     description: i18next.t('experience_modes_focus_desc'),
-                    accent: 'from-cyan-400/20 to-blue-500/20'
+                    accent: 'from-cyan-400/20 to-blue-500/20',
+                    tone: 'text-cyan-200',
+                    animation: 'icon-pulse'
                 },
                 {
                     key: 'workshop',
-                    icon: '🧩',
+                    icon: 'puzzle',
                     title: i18next.t('experience_modes_workshop_title'),
                     description: i18next.t('experience_modes_workshop_desc'),
-                    accent: 'from-emerald-400/20 to-cyan-500/20'
+                    accent: 'from-emerald-400/20 to-cyan-500/20',
+                    tone: 'text-emerald-200',
+                    animation: 'icon-float'
                 },
                 {
                     key: 'webinar',
-                    icon: '🛰️',
+                    icon: 'satellite',
                     title: i18next.t('experience_modes_webinar_title'),
                     description: i18next.t('experience_modes_webinar_desc'),
-                    accent: 'from-indigo-400/20 to-purple-500/20'
+                    accent: 'from-indigo-400/20 to-purple-500/20',
+                    tone: 'text-indigo-200',
+                    animation: 'icon-spin-slow'
                 }
             ];
 
@@ -1063,7 +1151,9 @@
                                 aria-pressed={activeMode === mode.key}
                             >
                                 <div className="mb-3 flex items-center gap-3">
-                                    <span className="text-2xl" aria-hidden="true">{mode.icon}</span>
+                                    <span className={classNames('inline-flex items-center', mode.tone)} aria-hidden="true">
+                                        <LucideIcon name={mode.icon} className={classNames('lg', mode.animation)} />
+                                    </span>
                                     <span className="font-semibold">{mode.title}</span>
                                 </div>
                                 <p className="text-sm text-white/70">{mode.description}</p>
@@ -1406,24 +1496,30 @@
             const connectors = [
                 {
                     key: 'france',
-                    icon: '🏛️',
+                    icon: 'landmark',
                     status: franceTravailDisabled ? 'disabled' : 'ready',
                     label: i18next.t('auth_status_france'),
-                    description: i18next.t('auth_status_france_desc')
+                    description: i18next.t('auth_status_france_desc'),
+                    tone: 'text-sky-200',
+                    animation: 'icon-float'
                 },
                 {
                     key: 'google',
-                    icon: '🔗',
+                    icon: 'link-2',
                     status: googleDisabled ? 'disabled' : 'ready',
                     label: i18next.t('auth_status_google'),
-                    description: i18next.t('auth_status_google_desc')
+                    description: i18next.t('auth_status_google_desc'),
+                    tone: 'text-emerald-200',
+                    animation: 'icon-spin-slow'
                 },
                 {
                     key: 'email',
-                    icon: '✉️',
+                    icon: 'mail',
                     status: 'ready',
                     label: i18next.t('auth_status_email'),
-                    description: i18next.t('auth_status_email_desc')
+                    description: i18next.t('auth_status_email_desc'),
+                    tone: 'text-cyan-200',
+                    animation: 'icon-pulse'
                 }
             ];
 
@@ -1481,7 +1577,9 @@
                                     {connectors.map((connector) => (
                                         <article key={connector.key} className="p-4 rounded-2xl bg-white/5 border border-white/10 floating-card">
                                             <div className="flex items-center justify-between mb-3">
-                                                <div className="text-2xl" aria-hidden="true">{connector.icon}</div>
+                                                <div className={classNames('inline-flex items-center', connector.tone)} aria-hidden="true">
+                                                    <LucideIcon name={connector.icon} className={classNames('lg', connector.animation)} />
+                                                </div>
                                                 <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusClasses(connector.status)}`}>
                                                     {connector.status === 'ready'
                                                         ? i18next.t('auth_status_ready')
@@ -1811,7 +1909,9 @@
                                                 aria-controls="demo-session-panel"
                                             >
                                                 <div className="flex items-center gap-3 text-base font-semibold text-white">
-                                                    <span className="text-3xl" aria-hidden="true">⚡</span>
+                                                    <span className="inline-flex items-center text-amber-200" aria-hidden="true">
+                                                        <LucideIcon name="zap" className="lg icon-pulse" />
+                                                    </span>
                                                     <div>
                                                         <p>{i18next.t('demo_login_title')}</p>
                                                         <p className="hidden text-sm text-white/80 sm:block">
@@ -1842,29 +1942,41 @@
                                                 </p>
                                                 <div className="flex flex-wrap gap-2 mb-4">
                                                     <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-white">
-                                                        <span aria-hidden="true">🚀</span>
+                                                        <span className="text-emerald-200" aria-hidden="true">
+                                                            <LucideIcon name="rocket" className="sm icon-float" />
+                                                        </span>
                                                         {i18next.t('demo_login_pill_speed')}
                                                     </span>
                                                     <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-white">
-                                                        <span aria-hidden="true">🛡️</span>
+                                                        <span className="text-emerald-200" aria-hidden="true">
+                                                            <LucideIcon name="shield-check" className="sm icon-pulse" />
+                                                        </span>
                                                         {i18next.t('demo_login_pill_safe')}
                                                     </span>
                                                     <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-white">
-                                                        <span aria-hidden="true">🎨</span>
+                                                        <span className="text-emerald-200" aria-hidden="true">
+                                                            <LucideIcon name="palette" className="sm icon-spin-slow" />
+                                                        </span>
                                                         {i18next.t('demo_login_pill_motion')}
                                                     </span>
                                                 </div>
                                                 <div className="mb-5 grid gap-3">
                                                     <div className="flex items-center gap-3 text-sm text-white/80">
-                                                        <span className="text-lg" aria-hidden="true">🪄</span>
+                                                        <span className="text-sky-200" aria-hidden="true">
+                                                            <LucideIcon name="wand-2" className="sm icon-float" />
+                                                        </span>
                                                         <p>{i18next.t('demo_login_feature_transitions')}</p>
                                                     </div>
                                                     <div className="flex items-center gap-3 text-sm text-white/80">
-                                                        <span className="text-lg" aria-hidden="true">🛰️</span>
+                                                        <span className="text-sky-200" aria-hidden="true">
+                                                            <LucideIcon name="satellite" className="sm icon-spin-slow" />
+                                                        </span>
                                                         <p>{i18next.t('demo_login_feature_tokens')}</p>
                                                     </div>
                                                     <div className="flex items-center gap-3 text-sm text-white/80">
-                                                        <span className="text-lg" aria-hidden="true">🤝</span>
+                                                        <span className="text-sky-200" aria-hidden="true">
+                                                            <LucideIcon name="handshake" className="sm icon-pulse" />
+                                                        </span>
                                                         <p>{i18next.t('demo_login_feature_accessibility')}</p>
                                                     </div>
                                                 </div>
