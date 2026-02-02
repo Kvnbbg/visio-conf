@@ -227,6 +227,8 @@ const App = () => {
             return;
         }
 
+        setMeetingId(sanitizedMeetingId);
+        setUserId(sanitizedUserId);
         setStoredValue(STORAGE_KEYS.meetingId, sanitizedMeetingId);
         setStoredValue(STORAGE_KEYS.userId, sanitizedUserId);
         setError('');
