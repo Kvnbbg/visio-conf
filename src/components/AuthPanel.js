@@ -123,7 +123,7 @@ const AuthPanel = ({
                     </div>
                 </div>
 
-                <button
+                <button type="button"
                     onClick={onLogout}
                     className="w-full min-h-[44px] rounded-xl bg-red-500 px-4 py-3 font-medium text-white transition-colors duration-200 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                     aria-label={t('logout_button')}
@@ -142,7 +142,7 @@ const AuthPanel = ({
             </div>
 
             <div className="flex gap-2 rounded-full bg-gray-100 p-1">
-                <button
+                <button type="button"
                     onClick={() => onModeChange('register')}
                     className={`flex-1 min-h-[44px] rounded-full px-4 py-2 text-base font-semibold ${
                         isRegister ? 'bg-white text-indigo-700 shadow' : 'text-gray-500'
@@ -151,7 +151,7 @@ const AuthPanel = ({
                 >
                     {t('register_tab')}
                 </button>
-                <button
+                <button type="button"
                     onClick={() => onModeChange('login')}
                     className={`flex-1 min-h-[44px] rounded-full px-4 py-2 text-base font-semibold ${
                         !isRegister ? 'bg-white text-indigo-700 shadow' : 'text-gray-500'
@@ -242,7 +242,7 @@ const AuthPanel = ({
                     </div>
                 )}
 
-                <button
+                <button type="button"
                     onClick={submitAuth}
                     disabled={!formReady || submitting}
                     className={`w-full min-h-[44px] rounded-xl px-4 py-3 font-medium transition-colors duration-200 ${
@@ -266,7 +266,7 @@ const AuthPanel = ({
                     <span className="h-px flex-1 bg-gray-200"></span>
                 </div>
 
-                <button
+                <button type="button"
                     onClick={onFranceTravailLogin}
                     disabled={!franceTravailEnabled}
                     className={`w-full min-h-[44px] rounded-xl px-4 py-3 font-medium transition-colors duration-200 ${
@@ -279,7 +279,7 @@ const AuthPanel = ({
                 </button>
 
                 {demoMode && (
-                    <button
+                    <button type="button"
                         onClick={async () => {
                             setSubmitting(true);
                             clearStatus();

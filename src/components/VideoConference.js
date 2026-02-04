@@ -83,7 +83,7 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
                     </div>
                 )}
 
-                <button
+                <button type="button"
                     onClick={joinRoom}
                     disabled={isLoading || !meetingId}
                     className={`w-full min-h-[44px] py-2 px-4 rounded-md font-medium transition-colors duration-200 ${
@@ -121,7 +121,7 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
             </div>
 
             <div className="flex justify-center space-x-4 mb-4">
-                <button
+                <button type="button"
                     onClick={toggleCamera}
                     className={`min-h-[44px] min-w-[44px] p-3 rounded-full transition-colors duration-200 ${
                         isCameraOn
@@ -134,7 +134,7 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
                     {isCameraOn ? '📹' : '📷'}
                 </button>
 
-                <button
+                <button type="button"
                     onClick={toggleMicrophone}
                     className={`min-h-[44px] min-w-[44px] p-3 rounded-full transition-colors duration-200 ${
                         isMicOn
@@ -149,7 +149,7 @@ const VideoConference = ({ meetingId, user, onLeave }) => {
             </div>
 
             <div className="flex justify-center mb-4">
-                <button
+                <button type="button"
                     onClick={leaveRoom}
                     className="min-h-[44px] py-2 px-6 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors duration-200"
                     aria-label={t('end_call')}

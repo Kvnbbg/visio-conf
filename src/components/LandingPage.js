@@ -44,7 +44,7 @@ const LandingPage = ({ onGetStarted, onViewIndex }) => {
                     </div>
                     <div className="flex flex-wrap gap-3">
                         {ctaButtons.map((button) => (
-                            <button
+                            <button type="button"
                                 key={button.label}
                                 onClick={button.onClick}
                                 className={`min-h-[44px] rounded-full px-5 py-2.5 text-base font-semibold shadow transition ${button.className}`}

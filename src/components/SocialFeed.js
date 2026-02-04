@@ -477,7 +477,7 @@ const SocialFeed = ({ currentUser }) => {
                 <div className="space-y-2">
                     <h2 className="text-base font-semibold text-slate-900">{t('feed_sidebar_title')}</h2>
                     <p className="text-base text-slate-600">{t('feed_sidebar_subtitle')}</p>
-                    <button className="min-h-[44px] w-full rounded-full bg-indigo-600 px-4 text-base font-semibold text-white transition hover:bg-indigo-700">
+                    <button type="button" className="min-h-[44px] w-full rounded-full bg-indigo-600 px-4 text-base font-semibold text-white transition hover:bg-indigo-700">
                         {t('feed_follow_cta')}
                     </button>
                 </div>

@@ -56,7 +56,7 @@ const ConsultationIndex = ({ onJoinConsultation }) => {
                         </li>
                     ))}
                 </ul>
-                <button
+                <button type="button"
                     onClick={onJoinConsultation}
                     className="mt-6 min-h-[44px] rounded-full bg-indigo-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-indigo-700"
                 >
