@@ -6,6 +6,31 @@ const MAX_POST_LENGTH = 280;
 const STREAK_KEY = 'visio_streak_count';
 const STREAK_DATE_KEY = 'visio_streak_date';
 
+const safeLocalStorage = {
+    getItem: (key, fallback = null) => {
+        try {
+            const value = localStorage.getItem(key);
+            return value ?? fallback;
+        } catch (storageError) {
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn('Unable to read from local storage', storageError);
+            }
+            return fallback;
+        }
+    },
+    setItem: (key, value) => {
+        try {
+            localStorage.setItem(key, value);
+            return true;
+        } catch (storageError) {
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn('Unable to write to local storage', storageError);
+            }
+            return false;
+        }
+    }
+};
+
 const getUtcDateKey = (date) => new Date(date).toISOString().split('T')[0];
 
 const sanitizeInput = (value) => value.replace(/<[^>]*>?/gm, '').trim();
@@ -161,8 +186,8 @@ const SocialFeed = ({ currentUser }) => {
     const [streakDate, setStreakDate] = useState(getUtcDateKey(new Date()));
 
     useEffect(() => {
-        const storedCount = Number(localStorage.getItem(STREAK_KEY) || 1);
-        const storedDate = localStorage.getItem(STREAK_DATE_KEY) || getUtcDateKey(new Date());
+        const storedCount = Number(safeLocalStorage.getItem(STREAK_KEY, 1));
+        const storedDate = safeLocalStorage.getItem(STREAK_DATE_KEY, getUtcDateKey(new Date()));
         setStreakCount(Number.isNaN(storedCount) ? 1 : storedCount);
         setStreakDate(storedDate);
     }, []);
@@ -191,8 +216,8 @@ const SocialFeed = ({ currentUser }) => {
     }, []);
 
     useEffect(() => {
-        localStorage.setItem(STREAK_KEY, String(streakCount));
-        localStorage.setItem(STREAK_DATE_KEY, streakDate);
+        safeLocalStorage.setItem(STREAK_KEY, String(streakCount));
+        safeLocalStorage.setItem(STREAK_DATE_KEY, streakDate);
     }, [streakCount, streakDate]);
 
     const updateStreak = useCallback(() => {

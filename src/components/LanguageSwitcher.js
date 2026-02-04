@@ -1,6 +1,16 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
+const persistLanguage = (lng) => {
+    try {
+        localStorage.setItem('language', lng);
+    } catch (storageError) {
+        if (process.env.NODE_ENV !== 'production') {
+            console.warn('Unable to store selected language', storageError);
+        }
+    }
+};
+
 const LanguageSwitcher = ({ compact = false }) => {
     const { i18n, t } = useTranslation();
 
@@ -13,7 +23,7 @@ const LanguageSwitcher = ({ compact = false }) => {
 
     const changeLanguage = (lng) => {
         i18n.changeLanguage(lng);
-        localStorage.setItem('language', lng);
+        persistLanguage(lng);
     };
 
     return (
