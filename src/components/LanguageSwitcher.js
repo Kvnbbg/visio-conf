@@ -40,7 +40,7 @@ const LanguageSwitcher = ({ compact = false }) => {
                 }`}
             >
                 {languages.map((lang) => (
-                    <button
+                    <button type="button"
                         key={lang.code}
                         onClick={() => changeLanguage(lang.code)}
                         className={`flex min-h-[44px] items-center gap-2 rounded-full px-3 py-1.5 text-base font-semibold transition-all duration-200 sm:px-4 ${

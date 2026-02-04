@@ -64,7 +64,7 @@ const PageTabs = ({ activePage, onChange }) => {
                 }`}
             >
                 {tabs.map((tab) => (
-                    <button
+                    <button type="button"
                         key={tab.id}
                         onClick={() => handleTabChange(tab.id)}
                         className={`flex flex-1 flex-col rounded-xl px-4 py-3 text-left text-base transition-all duration-200 min-h-[44px] sm:min-w-[180px] ${
