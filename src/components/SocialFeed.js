@@ -265,7 +265,20 @@ const SocialFeed = ({ currentUser }) => {
 
     const handleComposerChange = useCallback((event) => {
         setComposerText(event.target.value.slice(0, MAX_POST_LENGTH));
-    }, []);
+        if (statusMessage) {
+            setStatusMessage('');
+        }
+    }, [statusMessage]);
+
+    const handleEditChange = useCallback((event) => {
+        setEditingText(event.target.value.slice(0, MAX_POST_LENGTH));
+        if (statusMessage) {
+            setStatusMessage('');
+        }
+    }, [statusMessage]);
+
+    const remainingCharacters = MAX_POST_LENGTH - composerText.length;
+    const isComposerDisabled = !sanitizeInput(composerText);
 
     const handleCreatePost = useCallback(async () => {
         const sanitized = sanitizeInput(composerText);
@@ -512,11 +525,14 @@ const SocialFeed = ({ currentUser }) => {
                         maxLength={MAX_POST_LENGTH}
                     />
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
-                        <span>{t('feed_compose_count', { count: MAX_POST_LENGTH - composerText.length })}</span>
+                        <span>{t('feed_compose_count', { count: remainingCharacters })}</span>
                         <button
                             type="button"
                             onClick={handleCreatePost}
-                            className="min-h-[44px] rounded-full bg-indigo-600 px-5 text-base font-semibold text-white transition hover:bg-indigo-700"
+                            disabled={isComposerDisabled}
+                            className={`min-h-[44px] rounded-full px-5 text-base font-semibold text-white transition ${
+                                isComposerDisabled ? 'cursor-not-allowed bg-indigo-300' : 'bg-indigo-600 hover:bg-indigo-700'
+                            }`}
                         >
                             {t('feed_compose_cta')}
                         </button>
@@ -629,14 +645,20 @@ const SocialFeed = ({ currentUser }) => {
                                 <div className="mt-4 space-y-3">
                                     <textarea
                                         value={editingText}
-                                        onChange={(event) => setEditingText(event.target.value)}
+                                        onChange={handleEditChange}
                                         className="min-h-[120px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-700 shadow-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500"
+                                        maxLength={MAX_POST_LENGTH}
                                     />
                                     <div className="flex flex-wrap gap-2">
                                         <button
                                             type="button"
                                             onClick={saveEdit}
-                                            className="min-h-[44px] rounded-full bg-indigo-600 px-4 text-base font-semibold text-white hover:bg-indigo-700"
+                                            disabled={!sanitizeInput(editingText)}
+                                            className={`min-h-[44px] rounded-full px-4 text-base font-semibold text-white ${
+                                                sanitizeInput(editingText)
+                                                    ? 'bg-indigo-600 hover:bg-indigo-700'
+                                                    : 'cursor-not-allowed bg-indigo-300'
+                                            }`}
                                         >
                                             {t('feed_save')}
                                         </button>
