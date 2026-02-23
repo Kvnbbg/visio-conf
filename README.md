@@ -1,162 +1,73 @@
-# Visio-Conf
+# React + TypeScript + Vite
 
-Visio-Conf is a Node.js (Express) video-conferencing backend with a static React UI served from `public/`. It integrates France Travail OAuth 2.0 (PKCE), generates ZEGOCLOUD meeting tokens, and ships a demo mode so you can evaluate the flow without external credentials.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Scope
+Currently, two official plugins are available:
 
-- **Backend:** Express API (`server.js`) handling OAuth, sessions, token generation, and health checks.
-- **Frontend:** Static React UI embedded in `public/index.html` (no build step required).
-- **Primary language:** JavaScript (Node.js + Express).
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Prerequisites
+## React Compiler
 
-- Node.js **18+**
-- npm **8+**
-- Redis (optional, for shared sessions in production)
-- France Travail developer account (optional, for real OAuth)
-- ZEGOCLOUD account (optional, for production video tokens)
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Install
+## Expanding the ESLint configuration
 
-```bash
-git clone https://github.com/Kvnbbg/visio-conf.git
-cd visio-conf
-npm install
-cp .env.example .env
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-## Run
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-```bash
-# Development (auto-reload)
-npm run dev
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-# Production
-npm start
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-
-The server listens on `http://localhost:3000` by default.
-
-### CLI usage
-
-```bash
-node server.js --help
-node server.js --version
-```
-
-## Configuration
-
-Environment variables live in `.env`. Use `.env.example` as your base:
-
-```env
-NODE_ENV=development
-PORT=3000
-SESSION_SECRET=your-super-secret-session-key-change-this-in-production
-DEMO_MODE=true
-
-CORS_ALLOWED_ORIGINS=
-RATE_LIMIT_MAX=100
-
-ZEGOCLOUD_APP_ID=your_zegocloud_app_id
-ZEGOCLOUD_SERVER_SECRET=your_zegocloud_server_secret
-ALLOW_ZEGO_CLIENT_FALLBACK=true
-ZEGOCLOUD_DEFAULT_MODE=fallback
-
-FRANCETRAVAIL_CLIENT_ID=your_france_travail_client_id
-FRANCETRAVAIL_CLIENT_SECRET=your_france_travail_client_secret
-FRANCETRAVAIL_REDIRECT_URI=http://localhost:3000/auth/francetravail/callback
-
-REDIS_URL=redis://localhost:6379
-SENTRY_DSN=your_sentry_dsn_for_error_tracking
-LOG_LEVEL=info
-```
-
-### Demo mode (first-run experience)
-
-- When `DEMO_MODE=true` **or** France Travail credentials are missing, the app starts in demo mode.
-- Use `/api/auth/demo-login` to create a session without OAuth.
-
-## API usage examples
-
-### Health
-
-```bash
-curl http://localhost:3000/api/health
-```
-
-### Demo login
-
-```bash
-curl -X POST http://localhost:3000/api/auth/demo-login \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Demo User","email":"demo@example.com"}'
-```
-
-### Generate a ZEGOCLOUD token
-
-```bash
-curl -X POST http://localhost:3000/api/generate-token \
-  -H "Content-Type: application/json" \
-  -d '{"roomID":"team-sync","userID":"alex"}'
-```
-
-### France Travail login
-
-```bash
-open http://localhost:3000/auth/francetravail/login
-```
-
-## Folder structure (entry points)
-
-```
-visio-conf/
-├── server.js               # Express server entrypoint
-├── public/index.html       # Static React UI (served directly)
-├── lib/                    # Auth, config, middleware, logging, Redis
-├── tests/                  # Jest test suite
-├── .env.example            # Example environment configuration
-├── CLAUDE.md               # Project context for agentic workflows
-```
-
-> Note: `src/` contains older React components and is not wired to a build step yet. The production UI is served from `public/index.html`.
-
-## Troubleshooting
-
-- **CORS errors:** set `CORS_ALLOWED_ORIGINS` to a comma-separated list of allowed origins.
-- **Sessions reset on refresh:** configure `REDIS_URL` in production so sessions persist across instances.
-- **OAuth callback errors:** verify `FRANCETRAVAIL_REDIRECT_URI` matches the route `/auth/francetravail/callback`.
-- **Health check fails:** ensure `npm start` is running and use `/api/health` (or `/health`).
-
-## Vercel deployment (easy deploy)
-
-Use the Vercel CLI or dashboard to deploy; `vercel.json` already wires the Node serverless function and static assets. See the step-by-step guide in [`docs/vercel-deploy.md`](docs/vercel-deploy.md).
-
-## Security notes
-
-- Replace `SESSION_SECRET` and ZEGOCLOUD secrets in production.
-- Keep `.env` and `.secrets` out of source control.
-- Demo mode is for local/testing only; disable it in production.
-- OWASP-aligned pentest checklist: see [`docs/owasp-top-20-mistakes.md`](docs/owasp-top-20-mistakes.md).
-
-## Contributing
-
-1. Fork the repository and create a feature branch.
-2. Install dependencies: `npm install`.
-3. Run checks before submitting:
-   ```bash
-   npm run lint
-   npm test
-   ```
-4. Open a pull request with a clear summary and test results.
-
-## Testing & quality
-
-```bash
-npm test
-npm run lint
-npm run build
-```
-
-## License
-
-MIT
